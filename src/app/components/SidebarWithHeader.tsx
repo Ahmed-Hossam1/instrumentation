@@ -111,9 +111,11 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
       {LinkItems.map((link) => (
-        <NavItem key={link.name} icon={link.icon} href={link.href}>
-          {link.name}
-        </NavItem>
+        <Box key={link.name} onClick={onClose}>
+          <NavItem icon={link.icon} href={link.href}>
+            {link.name}
+          </NavItem>
+        </Box>
       ))}
     </Box>
   );
@@ -196,9 +198,7 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
           <Menu>
             <MenuButton py={2} transition="all 0.3s">
               <HStack>
-                <Avatar
-                  size="sm"
-                />
+                <Avatar size="sm" />
                 <VStack
                   display={{ base: "none", md: "flex" }}
                   alignItems="flex-start"
