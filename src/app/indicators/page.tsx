@@ -192,7 +192,7 @@ const IndicatorsPage = () => {
 
       {/* Filter & Add */}
       <MyHeading
-        deviceName="Switch"
+        deviceName="indicator"
         handleSearch={handleSearch}
         handleStatusFilter={handleStatusFilter}
         search={search}

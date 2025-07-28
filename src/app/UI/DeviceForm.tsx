@@ -48,6 +48,7 @@ export default function DeviceForm({ fields, onChange  }: Props) {
           {f.type === "file" && (
             <Input
               name={f.name}
+              multiple
               type="file"
               onChange={onChange}
               placeholder={f.placeholder}

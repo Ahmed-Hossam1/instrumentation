@@ -115,6 +115,13 @@ const TransmittersPage = () => {
     }
   };
 
+  // const handleUpload = async () => {
+  //   if(!productToEdit.image) return ;
+
+  //   const result  = productToEdit.image.
+
+  // }
+
   // ========== Save Handler ==========
   const handleSave = async () => {
     const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
