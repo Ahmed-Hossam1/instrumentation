@@ -4,9 +4,6 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import {
   Box,
   Heading,
-  Input,
-  Select,
-  Button,
   Text,
   SimpleGrid,
   HStack,
@@ -26,6 +23,7 @@ import Loader from "../UI/Loader";
 import { supabase } from "../lib/Supabase";
 import DeviceForm from "../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
+import MyHeading from "../components/MyHeading";
 
 const SwitchesPage = () => {
   /*===================== STATES ======================*/
@@ -208,7 +206,15 @@ const SwitchesPage = () => {
     }
   };
 
-  if (isLoading) return <Loader loading = {isLoading} />;
+  //========== FILTER Handlers ==========
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+  const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
+  if (isLoading) return <Loader loading={isLoading} />;
 
   return (
     <Box p={6} bg={bg} borderRadius="md" shadow="md">
@@ -216,27 +222,14 @@ const SwitchesPage = () => {
         🛰️ Switches
       </Heading>
 
-      <HStack spacing={4} mb={6}>
-        <Input
-          placeholder="ابحث برقم الجهاز أو التاج"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          maxW="200px"
-        >
-          <option value="all">كل الحالات</option>
-          <option value="Active">يعمل</option>
-          <option value="Needs Calibration">يحتاج إلى معايرة</option>
-          <option value="Faulty">تالف</option>
-          <option value="Inactive">لا يعمل</option>
-        </Select>
-        <Button colorScheme="blue" w={"200px"} onClick={handleOpenModal}>
-          + إضافة switch
-        </Button>
-      </HStack>
+      <MyHeading
+        deviceName="Switch"
+        handleSearch={handleSearch}
+        handleStatusFilter={handleStatusFilter}
+        search={search}
+        statusFilter={statusFilter}
+        handleOpenAddModal={handleOpenModal}
+      />
 
       <MyModal
         ModalTitle="اضافة Switch"

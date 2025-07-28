@@ -16,7 +16,7 @@ type Props = {
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 };
 
-export default function DeviceForm({ fields, onChange }: Props) {
+export default function DeviceForm({ fields, onChange  }: Props) {
   return (
     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
       {fields.map((f) => (
@@ -55,7 +55,7 @@ export default function DeviceForm({ fields, onChange }: Props) {
           )}
 
           {f.type === "checkbox" && (
-            <Checkbox name={f.name} onChange={onChange}>
+            <Checkbox name={f.name} onChange={onChange} >
               {f.label}
             </Checkbox>
           )}

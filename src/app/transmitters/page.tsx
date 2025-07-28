@@ -6,25 +6,22 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import {
   Box,
   Heading,
-  Input,
-  Select,
   Text,
   SimpleGrid,
   HStack,
   useColorModeValue,
-  Button,
 } from "@chakra-ui/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import Pagination from "@/app/UI/Pagination";
 import ProductCard from "@/app/components/ProductCard";
 import MyModal from "@/app/UI/MyModal";
-import Loader from "@/app/UI/Loader";
 import { formConfig, type Transmitter } from "../interface/interface";
 import { supabase } from "../lib/Supabase";
 import DeviceForm from "../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
 import PageLoader from "@/app/UI/Loader";
+import MyHeading from "../components/MyHeading";
 
 // ========== Component ==========
 const TransmittersPage = () => {
@@ -201,6 +198,14 @@ const TransmittersPage = () => {
     }
   };
 
+  //========== FILTER Handlers ==========
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+  const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
   // ========== Loader ==========
   if (isLoading) return <PageLoader loading={isLoading} />;
 
@@ -212,38 +217,25 @@ const TransmittersPage = () => {
       </Heading>
 
       {/* Filter & Add */}
-      <HStack spacing={4} mb={6}>
-        <Input
-          placeholder="ابحث برقم الجهاز أو التاج"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          maxW="200px"
-        >
-          <option value="all">كل الحالات</option>
-          <option value="Active">يعمل</option>
-          <option value="Needs Calibration">يحتاج إلى معايرة</option>
-          <option value="Faulty">تالف</option>
-          <option value="Inactive">لا يعمل</option>
-        </Select>
 
-        <Button colorScheme="blue" onClick={handleOpenAddModal}>
-          إضافة Transmitter
-        </Button>
+      <MyHeading
+        handleOpenAddModal={handleOpenAddModal}
+        handleSearch={handleSearch}
+        search={search}
+        handleStatusFilter={handleStatusFilter}
+        statusFilter={statusFilter}
+        deviceName="Transmitter"
+      />
 
-        {/* Add Modal */}
-        <MyModal
-          ModalTitle="اضافة Transmitter"
-          handleSave={handleSave}
-          isOpen={isAddModalOpen}
-          closeModal={handleCloseAddModal}
-        >
-          <DeviceForm fields={FieldsType} onChange={handleChange} />
-        </MyModal>
-      </HStack>
+      {/* Add Modal */}
+      <MyModal
+        ModalTitle="اضافة Transmitter"
+        handleSave={handleSave}
+        isOpen={isAddModalOpen}
+        closeModal={handleCloseAddModal}
+      >
+        <DeviceForm fields={FieldsType} onChange={handleChange}  />
+      </MyModal>
 
       {/* Product Cards */}
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>

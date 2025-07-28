@@ -4,11 +4,8 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { formConfig, Indicators } from "../interface/interface";
 import {
   Box,
-  Button,
   Heading,
   HStack,
-  Input,
-  Select,
   SimpleGrid,
   Text,
   useColorModeValue,
@@ -22,6 +19,7 @@ import Loader from "../UI/Loader";
 import MyModal from "../UI/MyModal";
 import DeviceForm from "../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
+import MyHeading from "../components/MyHeading";
 
 const IndicatorsPage = () => {
   /*===================== STATES ======================*/
@@ -175,6 +173,15 @@ const IndicatorsPage = () => {
     setIsLoading(false);
   };
 
+    const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+  const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
+
+
   if (isLoading) return <Loader loading = {isLoading} />;
 
   return (
@@ -184,26 +191,15 @@ const IndicatorsPage = () => {
       </Heading>
 
       {/* Filter & Add */}
-      <HStack spacing={4} mb={6}>
-        <Input
-          placeholder="ابحث برقم الجهاز أو التاج"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          maxW="200px"
-        >
-          <option value="all">كل الحالات</option>
-          <option value="Active">يعمل</option>
-          <option value="Needs Calibration">يحتاج إلى معايرة</option>
-          <option value="Faulty">تالف</option>
-          <option value="Inactive">لا يعمل</option>
-        </Select>
-        <Button colorScheme="blue" onClick={handleOpenAddModal}>
-          إضافة جهاز
-        </Button>
+      <MyHeading
+        deviceName="Switch"
+        handleSearch={handleSearch}
+        handleStatusFilter={handleStatusFilter}
+        search={search}
+        statusFilter={statusFilter}
+        handleOpenAddModal={handleOpenAddModal}
+      />
+
         <MyModal
           ModalTitle="اضافة indicator"
           handleSave={handleSave}
@@ -212,7 +208,6 @@ const IndicatorsPage = () => {
         >
           <DeviceForm fields={FieldsType} onChange={handleChange} />
         </MyModal>
-      </HStack>
 
       {/* Cards */}
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>

@@ -4,13 +4,10 @@ import { useEffect, useState, ChangeEvent } from "react";
 import {
   Box,
   Heading,
-  Input,
-  Select,
   Text,
   SimpleGrid,
   HStack,
   useColorModeValue,
-  Button,
 } from "@chakra-ui/react";
 import Pagination from "../UI/Pagination";
 import ProductCard from "../components/ProductCard";
@@ -22,6 +19,7 @@ import Link from "next/link";
 import { supabase } from "../lib/Supabase";
 import DeviceForm from "../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
+import MyHeading from "../components/MyHeading";
 
 const ValvesPage = () => {
   /*===================== STATE ======================*/
@@ -184,43 +182,36 @@ const ValvesPage = () => {
       setIsLoading(false);
     }
   };
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+  const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
 
-  if (isLoading) return <Loader loading = {isLoading} />;
+  if (isLoading) return <Loader loading={isLoading} />;
 
   return (
     <Box p={6} bg={bg} borderRadius="md" shadow="md">
       <Heading mb={4}>🛠️ Valves</Heading>
 
-      <HStack spacing={4} mb={6}>
-        <Input
-          placeholder="ابحث برقم الجهاز أو التاج"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          maxW="200px"
-        >
-          <option value="all">كل الحالات</option>
-          <option value="يعمل">يعمل</option>
-          <option value="لا يعمل">لا يعمل</option>
-          <option value="تالف">تالف</option>
-          <option value="يحتاج إلى معايرة">يحتاج إلى معايرة</option>
-        </Select>
-        <Button colorScheme="blue" onClick={handleOpenModal}>
-          + إضافة Valve
-        </Button>
+      <MyHeading
+        handleOpenAddModal={handleOpenModal}
+        handleSearch={handleSearch}
+        search={search}
+        handleStatusFilter={handleStatusFilter}
+        statusFilter={statusFilter}
+        deviceName="Valve"
+      />
 
-        <MyModal
-          ModalTitle="🛠️ إضافة Valve"
-          handleSave={handleSave}
-          isOpen={isOpen}
-          closeModal={handleCloseModal}
-        >
-          <DeviceForm fields={FieldsType} onChange={handleChange} />
-        </MyModal>
-      </HStack>
+      <MyModal
+        ModalTitle="🛠️ إضافة Valve"
+        handleSave={handleSave}
+        isOpen={isOpen}
+        closeModal={handleCloseModal}
+      >
+        <DeviceForm fields={FieldsType} onChange={handleChange} />
+      </MyModal>
 
       <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={6}>
         {currentItems.map((v) => (
