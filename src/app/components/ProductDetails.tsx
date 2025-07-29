@@ -36,6 +36,7 @@ import {
   MdSecurity,
 } from "react-icons/md";
 import { v4 as uuidv4 } from "uuid";
+import { TbTools } from "react-icons/tb";
 
 export default function ProductDetails() {
   const [product, setProduct] = useState<DeviceUnion>({} as DeviceUnion);
@@ -356,6 +357,13 @@ export default function ProductDetails() {
               <Text fontSize="lg">{product.range || "غير محدد"}</Text>
             </HStack>
           )}
+          <HStack>
+            <TbTools color="#3182ce" size={20} />
+            <Text fontWeight="bold" fontSize="lg">
+              الفيتينج:
+            </Text>
+            <Text fontSize="lg">غير محدد</Text>
+          </HStack>
 
           {/* Set Point */}
           {deviceType === "switches" && "set_point" in product && (
@@ -397,7 +405,7 @@ export default function ProductDetails() {
           <HStack>
             <MdDateRange color="#4fd1c5" size={20} />
             <Text fontWeight="bold" fontSize="lg">
-              تاريخ الإنشاء:
+              تاريخ الاضافه:
             </Text>
             <Text fontSize="lg">{product.created_at}</Text>
           </HStack>
@@ -407,13 +415,10 @@ export default function ProductDetails() {
             <Text fontWeight="bold" fontSize="lg">
               قطع الغيار:
             </Text>
-            <Badge
-              fontSize="lg"
-              colorScheme={product.howManySpares > 0 ? "green" : "red"}
-            >
+            <Badge fontSize="lg" colorScheme={"green"}>
               {product.howManySpares > 0
                 ? `✅ ${product.howManySpares}`
-                : "❌ لا يوجد"}
+                : "يوجد قطع غيار بالمخزن"}
             </Badge>
           </HStack>
 

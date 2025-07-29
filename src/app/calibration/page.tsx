@@ -155,7 +155,7 @@ const CalibrationPage = () => {
     setIsOpen(true);
   };
 
-  if (isLoading) return <Loader loading = {isLoading} />;
+  if (isLoading) return <Loader loading={isLoading} />;
 
   return (
     <Box p={{ base: 4, md: 6 }}>

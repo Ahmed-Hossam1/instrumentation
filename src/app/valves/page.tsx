@@ -100,36 +100,37 @@ const ValvesPage = () => {
     const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
 
     // ✅ التحقق من ID و TAG
-    if (!newValve.id) return toast.error("[VL-1001] يجب إدخال رقم الصمام");
+    if (!newValve.id) return toast.error("[VL-1001] يجب إدخال رقم البلف");
 
     if (!newValve.tag)
-      return toast.error("[VL-1002] يجب إدخال التاج الخاص بالصمام");
+      return toast.error("[VL-1002] يجب إدخال التاج الخاص بالبلف");
 
     if (!idTagRegex.test(newValve.id))
-      return toast.error("[VL-1022] صيغة رقم الصمام غير صحيحة، مثال: VL-1001");
+      return toast.error("[VL-1022] صيغة رقم البلف غير صحيحة، مثال: VL-1001");
 
     if (!idTagRegex.test(newValve.tag))
       return toast.error("[VL-1023] صيغة التاج غير صحيحة، مثال: VL-1001");
 
     if (newValve.id !== newValve.tag)
-      return toast.error("[VL-1030] رقم الصمام يجب أن يكون مطابق للتاج");
+      return toast.error("[VL-1030] رقم البلف يجب أن يكون مطابق للتاج");
 
     if (!newValve.valve_type)
-      return toast.error("[VL-1040] يجب اختيار نوع الصمام");
+      return toast.error("[VL-1040] يجب اختيار نوع البلف");
 
     if (!newValve.action_type)
       return toast.error("[VL-1041] يجب اختيار نوع الحركة (Action Type)");
 
-    if (!newValve.status)
-      return toast.error("[VL-1050] يجب اختيار حالة الصمام");
+    if (!newValve.status) return toast.error("[VL-1050] يجب اختيار حالة البلف");
 
     if (!newValve.location)
-      return toast.error("[VL-1060] يجب اختيار موقع الصمام");
+      return toast.error("[VL-1060] يجب اختيار موقع البلف");
 
-    if (!newValve.image) return toast.error("[VL-1070] صورة الصمام مطلوبة");
+    if (!newValve.image) return toast.error("صورة البلف مطلوبة");
+
+    if (!newValve.video) return toast.error("فيديو البلف مطلوب");
 
     if (!newValve.created_at)
-      return toast.error("[VL-1090] يجب إدخال تاريخ إنشاء الصمام");
+      return toast.error("[VL-1090] يجب إدخال تاريخ إنشاء البلف");
 
     setIsLoading(true);
 

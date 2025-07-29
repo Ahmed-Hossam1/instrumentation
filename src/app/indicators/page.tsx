@@ -128,8 +128,7 @@ const IndicatorsPage = () => {
 
     if (!productToEdit.image) return toast.error("الصورة مطلوبة");
 
-    if (!productToEdit.last_calibration)
-      return toast.error("تاريخ المعايرة مطلوب");
+    if (!productToEdit.video) return toast.error("الفيديو مطلوب");
 
     if (!productToEdit.created_at) return toast.error("تاريخ الإضافة مطلوب");
 
@@ -173,16 +172,14 @@ const IndicatorsPage = () => {
     setIsLoading(false);
   };
 
-    const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
   const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
   };
 
-
-
-  if (isLoading) return <Loader loading = {isLoading} />;
+  if (isLoading) return <Loader loading={isLoading} />;
 
   return (
     <Box p={6} bg={bg} borderRadius="md" shadow="md">
@@ -200,14 +197,14 @@ const IndicatorsPage = () => {
         handleOpenAddModal={handleOpenAddModal}
       />
 
-        <MyModal
-          ModalTitle="اضافة indicator"
-          handleSave={handleSave}
-          isOpen={isAddModalOpen}
-          closeModal={handleCloseAddModal}
-        >
-          <DeviceForm fields={FieldsType} onChange={handleChange} />
-        </MyModal>
+      <MyModal
+        ModalTitle="اضافة indicator"
+        handleSave={handleSave}
+        isOpen={isAddModalOpen}
+        closeModal={handleCloseAddModal}
+      >
+        <DeviceForm fields={FieldsType} onChange={handleChange} />
+      </MyModal>
 
       {/* Cards */}
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>

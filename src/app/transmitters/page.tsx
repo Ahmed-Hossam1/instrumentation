@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 // ========== Imports ==========
@@ -80,7 +79,7 @@ const TransmittersPage = () => {
 
   // ========== Modal Handlers ==========
   const handleOpenAddModal = () => setIsAddModalOpen(true);
-  
+
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setProductToEdit({ deviceType: "transmitters" } as Transmitter);
@@ -116,8 +115,6 @@ const TransmittersPage = () => {
     }
   };
 
-  
-
   // ========== Save Handler ==========
   const handleSave = async () => {
     const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
@@ -139,6 +136,7 @@ const TransmittersPage = () => {
     if (!productToEdit.status) return toast.error("يجب اختيار حالة الجهاز");
     if (!productToEdit.location) return toast.error("يجب اختيار موقع الجهاز");
     if (!productToEdit.image) return toast.error("يجب اختيار صورة الجهاز");
+    if (!productToEdit.video) return toast.error("يجب اختيار فيديو الجهاز");
     if (!productToEdit.range)
       return toast.error("يجب تحديد نطاق اختبار الجهاز");
     if (!productToEdit.created_at)
@@ -235,10 +233,7 @@ const TransmittersPage = () => {
         isOpen={isAddModalOpen}
         closeModal={handleCloseAddModal}
       >
-        <DeviceForm
-          fields={FieldsType}
-          onChange={handleChange}
-        />
+        <DeviceForm fields={FieldsType} onChange={handleChange} />
       </MyModal>
 
       {/* Product Cards */}

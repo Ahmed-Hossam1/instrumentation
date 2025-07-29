@@ -145,12 +145,9 @@ const SwitchesPage = () => {
 
     if (!newSwitch.image) return toast.error("صورة الجهاز مطلوبة");
 
-    if (!newSwitch.last_calibration)
-      return toast.error("تاريخ المعايرة الأخيرة مطلوب");
+    if (!newSwitch.video) return toast.error("فيديو الجهاز مطلوب");
 
     if (!newSwitch.created_at) return toast.error("تاريخ الإنشاء مطلوب");
-
-    const { id } = newSwitch;
 
     // Upload Image To Storage
     setIsLoading(true);
