@@ -6,8 +6,12 @@ import {
   VStack,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { Images } from "../interface/interface";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/Supabase";
 
 interface IProps {
+  deviceType: string;
   id: string;
   type: string;
   status?: string;
@@ -16,7 +20,24 @@ interface IProps {
   name?: string;
 }
 
-const ProductCard = ({ id, type, status, image, tag, name }: IProps) => {
+const ProductCard = ({ id, type, status, tag, name, deviceType }: IProps) => {
+  const [images, setImages] = useState<Images[]>([]);
+
+  useEffect(() => {
+    const getTransmittersImages = async () => {
+      const { data, error } = await supabase
+        .from(`${deviceType}_images`)
+        .select("*")
+        .eq("device_id", id);
+
+      if (error) console.log("failed to load image :" + error.message);
+      else setImages(data);
+    };
+
+    getTransmittersImages();
+  }, [id, deviceType]);
+
+  const MainImage = images.length > 0 ? images[0].url : null;
   const imageBg = useColorModeValue("gray.50", "gray.800");
 
   return (
@@ -31,8 +52,8 @@ const ProductCard = ({ id, type, status, image, tag, name }: IProps) => {
     >
       <Image
         src={
-          image
-            ? (image as string)
+          MainImage
+            ? MainImage
             : "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
         }
         alt={tag}
@@ -51,7 +72,7 @@ const ProductCard = ({ id, type, status, image, tag, name }: IProps) => {
             النوع: {type}
           </Text>
           <Text color="gray.500" dir="rtl">
-            الحالة: {status}
+            الحالة: {status || "غير معروف"}
           </Text>
           {name && (
             <Text color="gray.500" dir="rtl">

@@ -24,6 +24,9 @@ import MyHeading from "../components/MyHeading";
 const ValvesPage = () => {
   /*===================== STATE ======================*/
   const [valve, setValve] = useState<ValveDevice[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
+
   const [newValve, setNewValve] = useState<ValveDevice>({
     deviceType: "valves",
   } as ValveDevice);
@@ -84,10 +87,7 @@ const ValvesPage = () => {
   ) => {
     const { name, type } = e.target;
 
-    if (type === "file") {
-      const file = (e.target as HTMLInputElement).files?.[0] || null;
-      setNewValve((prev) => ({ ...prev, [name]: file }));
-    } else if (type === "checkbox") {
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setNewValve((prev) => ({ ...prev, [name]: checked }));
     } else {
@@ -97,9 +97,9 @@ const ValvesPage = () => {
   };
 
   const handleSave = async () => {
-    const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
+    const idTagRegex = /^[a-zA-Z]{2,6}-\d{2,6}[a-zA-Z]?$/;
 
-    // ✅ التحقق من ID و TAG
+    // === Validations ===
     if (!newValve.id) return toast.error("[VL-1001] يجب إدخال رقم البلف");
 
     if (!newValve.tag)
@@ -125,64 +125,79 @@ const ValvesPage = () => {
     if (!newValve.location)
       return toast.error("[VL-1060] يجب اختيار موقع البلف");
 
-    if (!newValve.image) return toast.error("صورة البلف مطلوبة");
+    if (images.length === 0) return toast.error("صورة البلف مطلوبة");
 
-    if (!newValve.video) return toast.error("فيديو البلف مطلوب");
+    if (!video) return toast.error("فيديو البلف مطلوب");
 
     if (!newValve.created_at)
       return toast.error("[VL-1090] يجب إدخال تاريخ إنشاء البلف");
 
     setIsLoading(true);
 
-    //  Upload image  To Storage First in Supabase
-    let image = "";
-    if (newValve.image) {
-      const { error: imgErr } = await supabase.storage
+    try {
+      // === Upload Video ===
+      const videoPath = `videos/${uniqueName}.mp4`;
+      const { error: videoError } = await supabase.storage
         .from("media")
-        .upload(`images/${uniqueName}.jpg`, newValve.image, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-      if (imgErr) {
-        if (imgErr) return toast.error("هذه الصورة موجودة بالفعل");
-        setIsLoading(false);
-      }
-      image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueName}.jpg`;
-    }
-
-    //  Upload video To Storage First in Supabase
-    let video = "";
-    if (newValve.video) {
-      const { error: vidErr } = await supabase.storage
-        .from("media")
-        .upload(`videos/${uniqueName}.mp4`, newValve.video, {
+        .upload(videoPath, video, {
           contentType: "video/mp4",
           upsert: true,
         });
-      if (vidErr) {
-        toast.error("هذه االفديو  موجودة بالفعل");
-        setIsLoading(false);
-      }
-      video = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
-    }
 
-    const { error } = await supabase.from("valves").insert({
-      ...newValve,
-      image,
-      video,
-    });
+      if (videoError) throw new Error("فشل رفع الفيديو: " + videoError.message);
 
-    if (error) {
-      toast.error("هذا الجهاز موجود بالفعل");
-      setIsLoading(false);
-      handleCloseModal();
-    } else {
-      toast.success("تم حفظ الصمام");
+      const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${videoPath}`;
+
+      // === Insert Valve Record ===
+      const { error: insertError } = await supabase.from("valves").insert({
+        ...newValve,
+        video: videoUrl,
+      });
+
+      if (insertError) throw new Error("هذا البلف موجود بالفعل");
+
+      // === Upload Images in Parallel ===
+      await Promise.all(
+        images.map(async (file) => {
+          const imageId = uuidv4();
+          const imagePath = `images/${imageId}.jpg`;
+
+          const { error: imgUploadError } = await supabase.storage
+            .from("media")
+            .upload(imagePath, file, {
+              contentType: "image/jpeg",
+              upsert: true,
+            });
+
+          if (imgUploadError)
+            throw new Error("خطأ أثناء رفع صورة: " + imgUploadError.message);
+
+          const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
+
+          const { error: dbInsertError } = await supabase
+            .from("valves_images")
+            .insert({
+              device_id: newValve.id,
+              url: imageUrl,
+            });
+
+          if (dbInsertError)
+            throw new Error(
+              "خطأ أثناء حفظ الصورة في قاعدة البيانات: " + dbInsertError.message
+            );
+        })
+      );
+
+      toast.success("تمت إضافة البلف بنجاح");
       handleCloseModal();
       getValves();
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
       setIsLoading(false);
     }
   };
+
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
@@ -211,7 +226,12 @@ const ValvesPage = () => {
         isOpen={isOpen}
         closeModal={handleCloseModal}
       >
-        <DeviceForm fields={FieldsType} onChange={handleChange} />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChange}
+          setImages={setImages}
+          setVideo={setVideo}
+        />
       </MyModal>
 
       <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={6}>

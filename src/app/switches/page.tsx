@@ -30,6 +30,8 @@ const SwitchesPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [products, setProducts] = useState<SwitchDevice[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
   const [newSwitch, setNewSwitch] = useState<SwitchDevice>({
     deviceType: "switches",
   } as SwitchDevice);
@@ -133,74 +135,83 @@ const SwitchesPage = () => {
       return toast.error("يجب أن يكون رقم الجهاز مطابق للتاج");
 
     if (!newSwitch.type) return toast.error("نوع الجهاز مطلوب");
-
     if (!newSwitch.range) return toast.error("المدى (Range) مطلوب");
-
     if (!newSwitch.set_point)
       return toast.error("نقطة الضبط (Set Point) مطلوبة");
-
     if (!newSwitch.location) return toast.error("الموقع مطلوب");
-
     if (!newSwitch.status) return toast.error("حالة الجهاز مطلوبة");
-
-    if (!newSwitch.image) return toast.error("صورة الجهاز مطلوبة");
-
-    if (!newSwitch.video) return toast.error("فيديو الجهاز مطلوب");
-
+    if (images.length === 0) return toast.error("يجب اختيار صورة الجهاز");
+    if (!video) return toast.error("يجب اختيار فيديو الجهاز");
     if (!newSwitch.created_at) return toast.error("تاريخ الإنشاء مطلوب");
 
-    // Upload Image To Storage
     setIsLoading(true);
-    let image = "";
-    if (newSwitch.image) {
-      const { error: imgERR } = await supabase.storage
+
+    // رفع الفيديو
+    const videoPath = `videos/${uniqueName}.mp4`;
+    const { error: vidErr } = await supabase.storage
+      .from("media")
+      .upload(videoPath, video, {
+        contentType: "video/mp4",
+        upsert: true,
+      });
+
+    if (vidErr) {
+      toast.error("هذه الفيديو موجود بالفعل");
+      setIsLoading(false);
+      return;
+    }
+
+    const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${videoPath}`;
+
+    // إدخال بيانات الجهاز
+    const { error: insertError } = await supabase.from("switches").insert({
+      ...newSwitch,
+      video: videoUrl,
+    });
+
+    if (insertError) {
+      toast.error("هذا الجهاز موجود بالفعل");
+      setIsLoading(false);
+      return handleCloseModal();
+    }
+
+    // رفع الصور وإدخالها
+    const imageUploadPromises = images.map(async (file) => {
+      const imageId = uuidv4();
+      const imagePath = `images/${imageId}.jpg`;
+
+      const { error: imgErr } = await supabase.storage
         .from("media")
-        .upload(`images/${uniqueName}`, newSwitch.image, {
+        .upload(imagePath, file, {
           contentType: "image/jpeg",
           upsert: true,
         });
 
-      if (imgERR) {
-        toast.error(imgERR.message);
-        setIsLoading(false);
+      if (imgErr) {
+        toast.error("الصورة موجودة بالفعل أو فيها مشكلة");
+        return;
       }
 
-      image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueName}`;
-    }
-    // Upload Video To Storage
-    let video = "";
-    if (newSwitch.video) {
-      const { error: vidERR } = await supabase.storage
-        .from("media")
-        .upload(`videos/${uniqueName}`, newSwitch.video, {
-          contentType: "video/jpeg",
-          upsert: true,
+      const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
+
+      const { error: imgInsertErr } = await supabase
+        .from("switches_images")
+        .insert({
+          device_id: newSwitch.id,
+          url: imageUrl,
         });
 
-      if (vidERR) {
-        toast.error(vidERR.message);
-        setIsLoading(false);
+      if (imgInsertErr) {
+        toast.error("خطأ أثناء حفظ رابط الصورة في قاعدة البيانات");
       }
-
-      video = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}`;
-    }
-
-    const { error } = await supabase.from("switches").insert({
-      ...newSwitch,
-      image,
-      video,
     });
 
-    if (error) {
-      toast.error("هذا الجهاز موجود بالفعل");
-      setIsLoading(false);
-      handleCloseModal();
-    } else {
-      toast.success("تم اضافه الجهاز بنجاح");
-      handleCloseModal();
-      getSwitches();
-      setIsLoading(false);
-    }
+    await Promise.all(imageUploadPromises);
+
+    toast.success("تم إضافة الجهاز والصور بنجاح");
+    setIsLoading(false);
+    handleCloseModal();
+    getSwitches();
   };
 
   //========== FILTER Handlers ==========
@@ -234,7 +245,12 @@ const SwitchesPage = () => {
         closeModal={handleCloseModal}
         handleSave={handleSave}
       >
-        <DeviceForm fields={FieldsType} onChange={handleChange} />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChange}
+          setImages={setImages}
+          setVideo={setVideo}
+        />
       </MyModal>
 
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>

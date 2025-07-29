@@ -73,6 +73,12 @@ export interface users {
   image: string | File;
 }
 
+export interface Images {
+  id: number;
+  device_id: string;
+  url: string;
+  created_at: Date;
+}
 export type Field = {
   name: string;
   label: string;

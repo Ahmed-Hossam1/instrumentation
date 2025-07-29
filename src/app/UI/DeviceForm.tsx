@@ -14,9 +14,16 @@ import type { Field } from "../interface/interface";
 type Props = {
   fields: Field[];
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  setImages: (files: File[]) => void;
+  setVideo: ({}: File) => void;
 };
 
-export default function DeviceForm({ fields, onChange }: Props) {
+export default function DeviceForm({
+  fields,
+  onChange,
+  setImages,
+  setVideo,
+}: Props) {
   return (
     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
       {fields.map((f) => (
@@ -45,11 +52,35 @@ export default function DeviceForm({ fields, onChange }: Props) {
             </Select>
           )}
 
-          {f.type === "file" && (
+          {/* =======image================= */}
+          {f.type === "file" && f.name === "image" && (
             <Input
               name={f.name}
+              multiple
               type="file"
-              onChange={onChange}
+              accept="image/*"
+              onChange={(e) => {
+                const images = e.target.files;
+                if (images) {
+                  setImages(Array.from(images));
+                }
+              }}
+              placeholder={f.placeholder}
+            />
+          )}
+
+          {/* =======video================= */}
+          {f.type === "file" && f.name === "video" && (
+            <Input
+              name={f.name}
+              accept="video/*"
+              type="file"
+              onChange={(e) => {
+                const video = e.target.files?.[0] || null;
+                if (video) {
+                  setVideo(video);
+                }
+              }}
               placeholder={f.placeholder}
             />
           )}

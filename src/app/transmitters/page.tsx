@@ -28,6 +28,8 @@ const TransmittersPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [products, setProducts] = useState<Transmitter[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
   const [productToEdit, setProductToEdit] = useState({
     deviceType: "transmitters",
   } as Transmitter);
@@ -85,7 +87,7 @@ const TransmittersPage = () => {
     setProductToEdit({ deviceType: "transmitters" } as Transmitter);
   };
 
-  // ========== Fetch Data ==========
+  // ========== get Transmitters Data ==========
   const getTransmitters = async () => {
     setIsLoading(true);
     const { data, error } = await supabase.from("transmitters").select("*");
@@ -93,6 +95,8 @@ const TransmittersPage = () => {
     else setProducts(data);
     setIsLoading(false);
   };
+
+  // get transmitters Images ==========
 
   useEffect(() => {
     getTransmitters();
@@ -103,10 +107,7 @@ const TransmittersPage = () => {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, type } = e.target;
-    if (type === "file") {
-      const file = (e.target as HTMLInputElement).files?.[0] || null;
-      setProductToEdit((prev) => ({ ...prev, [name]: file }));
-    } else if (type === "checkbox") {
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setProductToEdit((prev) => ({ ...prev, [name]: checked }));
     } else {
@@ -120,78 +121,87 @@ const TransmittersPage = () => {
     const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
 
     // === Validations ===
-    if (!productToEdit.id)
-      return toast.error("رقم الجهاز مطلوب [مثال: PT-1001 أو PT-3020]");
-    if (!idTagRegex.test(productToEdit.id))
-      return toast.error(
-        "صيغة رقم الجهاز غير صحيحة [مثال: PT-1022 أو PT-3020]"
-      );
-    if (!productToEdit.tag)
-      return toast.error("التاج مطلوب [مثال: PT-1002 أو PT-3020]");
-    if (!idTagRegex.test(productToEdit.tag))
-      return toast.error("صيغة التاج غير صحيحة [مثال: PT-1002A أو PT-3020]");
+    if (!productToEdit.id || !idTagRegex.test(productToEdit.id))
+      return toast.error("رقم الجهاز غير صالح [مثال: PT-1022 أو PT-3020]");
+
+    if (!productToEdit.tag || !idTagRegex.test(productToEdit.tag))
+      return toast.error("التاج غير صالح [مثال: PT-1002A أو PT-3020]");
+
     if (productToEdit.id !== productToEdit.tag)
       return toast.error("يجب أن يكون رقم الجهاز مساوٍ للتاج");
-    if (!productToEdit.type) return toast.error("يجب اختيار نوع الجهاز");
-    if (!productToEdit.status) return toast.error("يجب اختيار حالة الجهاز");
-    if (!productToEdit.location) return toast.error("يجب اختيار موقع الجهاز");
-    if (!productToEdit.image) return toast.error("يجب اختيار صورة الجهاز");
-    if (!productToEdit.video) return toast.error("يجب اختيار فيديو الجهاز");
-    if (!productToEdit.range)
-      return toast.error("يجب تحديد نطاق اختبار الجهاز");
-    if (!productToEdit.created_at)
-      return toast.error("يجب اختيار تاريخ إنشاء الجهاز");
+
+    if (!productToEdit.type) return toast.error("اختر نوع الجهاز");
+    if (!productToEdit.status) return toast.error("اختر حالة الجهاز");
+    if (!productToEdit.location) return toast.error("اختر موقع الجهاز");
+    if (!productToEdit.range) return toast.error("حدد نطاق اختبار الجهاز");
+    if (!productToEdit.created_at) return toast.error("اختر تاريخ الإنشاء");
+    if (images.length === 0) return toast.error("اختر صورة واحدة على الأقل");
+    if (!video) return toast.error("اختر فيديو للجهاز");
 
     setIsLoading(true);
 
-    // === Upload Image ===
-    let image = "";
-    if (productToEdit.image) {
-      const { error: imgErr } = await supabase.storage
+    try {
+      // === Upload Video ===
+      const videoPath = `videos/${uniqueFileName}.mp4`;
+      const { error: videoError } = await supabase.storage
         .from("media")
-        .upload(`images/${uniqueFileName}.jpg`, productToEdit.image, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-      if (imgErr) {
-        toast.error("هذه الصورة موجودة بالفعل");
-        setIsLoading(false);
-        return;
-      }
-      image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueFileName}.jpg`;
-    }
-
-    // === Upload Video ===
-    let video = "";
-    if (productToEdit.video) {
-      const { error: vidErr } = await supabase.storage
-        .from("media")
-        .upload(`videos/${uniqueFileName}.mp4`, productToEdit.video, {
+        .upload(videoPath, video, {
           contentType: "video/mp4",
           upsert: true,
         });
-      if (vidErr) {
-        toast.error("هذه االفديو  موجودة بالفعل");
-        setIsLoading(false);
-      }
-      video = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueFileName}.mp4`;
-    }
 
-    // === Insert Record ===
-    const { error } = await supabase.from("transmitters").insert({
-      ...productToEdit,
-      image,
-      video,
-    });
+      if (videoError) throw new Error("فشل رفع الفيديو: " + videoError.message);
 
-    if (error) {
-      toast.error("هذا الجهاز موجود بالفعل");
-      setIsLoading(false);
-      handleCloseAddModal();
-    } else {
-      toast.success(`تمت الاضافة بنجاح`);
+      const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${videoPath}`;
+
+      // === Insert Transmitter Record ===
+      const { error: insertError } = await supabase
+        .from("transmitters")
+        .insert({
+          ...productToEdit,
+          video: videoUrl,
+        });
+
+      if (insertError) throw new Error("هذا الجهاز موجود بالفعل");
+
+      // === Upload Images in Parallel ===
+      await Promise.all(
+        images.map(async (file) => {
+          const imageId = uuidv4();
+          const imagePath = `images/${imageId}.jpg`;
+
+          const { error: imgUploadError } = await supabase.storage
+            .from("media")
+            .upload(imagePath, file, {
+              contentType: "image/jpeg",
+              upsert: true,
+            });
+
+          if (imgUploadError)
+            throw new Error("خطأ أثناء رفع صورة: " + imgUploadError.message);
+
+          const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
+
+          const { error: dbInsertError } = await supabase
+            .from("transmitters_images")
+            .insert({
+              device_id: productToEdit.id,
+              url: imageUrl,
+            });
+
+          if (dbInsertError)
+            throw new Error(
+              "خطأ أثناء حفظ الصورة في قاعدة البيانات: " + dbInsertError.message
+            );
+        })
+      );
+
+      toast.success("تمت الإضافة بنجاح");
       handleCloseAddModal();
       getTransmitters();
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -233,7 +243,12 @@ const TransmittersPage = () => {
         isOpen={isAddModalOpen}
         closeModal={handleCloseAddModal}
       >
-        <DeviceForm fields={FieldsType} onChange={handleChange} />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChange}
+          setImages={setImages}
+          setVideo={setVideo}
+        />
       </MyModal>
 
       {/* Product Cards */}

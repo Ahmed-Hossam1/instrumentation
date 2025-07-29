@@ -26,6 +26,8 @@ const IndicatorsPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [products, setProducts] = useState<Indicators[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
   const [productToEdit, setProductToEdit] = useState({
     deviceType: "indicators",
   } as Indicators);
@@ -111,65 +113,81 @@ const IndicatorsPage = () => {
   const handleSave = async () => {
     const idTagRegex = /^[a-zA-Z]{2,5}-\d{3,5}[a-zA-Z]?$/;
 
-    if (!productToEdit.id || !idTagRegex.test(productToEdit.id))
+    // ✅ التحقق من المدخلات
+    if (!productToEdit.id || !idTagRegex.test(productToEdit.id)) {
       return toast.error("رقم الجهاز غير صحيح أو مفقود");
-
-    if (!productToEdit.tag || !idTagRegex.test(productToEdit.tag))
+    }
+    if (!productToEdit.tag || !idTagRegex.test(productToEdit.tag)) {
       return toast.error("صيغة التاج غير صحيحة");
-
-    if (productToEdit.id !== productToEdit.tag)
+    }
+    if (productToEdit.id !== productToEdit.tag) {
       return toast.error("يجب أن يتطابق رقم الجهاز مع التاج");
-
+    }
     if (!productToEdit.type) return toast.error("نوع الجهاز مطلوب");
-
     if (!productToEdit.location) return toast.error("الموقع مطلوب");
-
     if (!productToEdit.status) return toast.error("الحالة مطلوبة");
-
-    if (!productToEdit.image) return toast.error("الصورة مطلوبة");
-
-    if (!productToEdit.video) return toast.error("الفيديو مطلوب");
-
     if (!productToEdit.created_at) return toast.error("تاريخ الإضافة مطلوب");
+    if (images.length === 0) return toast.error("الصورة مطلوبة");
+    if (!video) return toast.error("الفيديو مطلوب");
 
     setIsLoading(true);
-
-    let image = "";
-    if (productToEdit.image) {
-      const { error: imgErr } = await supabase.storage
-        .from("media")
-        .upload(`images/${uniqueName}.jpg`, productToEdit.image, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-      if (imgErr) return toast.error("فشل رفع الصورة");
-      image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueName}.jpg`;
-    }
-
-    let video = "";
-    if (productToEdit.video) {
+    try {
+      // ✅ رفع الفيديو
       const { error: vidErr } = await supabase.storage
         .from("media")
-        .upload(`videos/${uniqueName}.mp4`, productToEdit.video, {
+        .upload(`videos/${uniqueName}.mp4`, video, {
           contentType: "video/mp4",
           upsert: true,
         });
-      if (vidErr) toast.error("فشل رفع الفيديو");
-      video = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
+
+      if (vidErr) throw new Error("فشل رفع الفيديو");
+
+      const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
+
+      // ✅ حفظ بيانات الجهاز
+      const { error: insertErr } = await supabase.from("indicators").insert({
+        ...productToEdit,
+        video: videoUrl,
+      });
+
+      if (insertErr) throw new Error(insertErr.message);
+
+      // ✅ رفع الصور بالتوازي
+      const uploadPromises = images.map(async (file) => {
+        const imageId = uuidv4();
+        const path = `images/${imageId}.jpg`;
+
+        const { error: imgErr } = await supabase.storage
+          .from("media")
+          .upload(path, file, {
+            contentType: "image/jpeg",
+            upsert: true,
+          });
+
+        if (imgErr) throw new Error("فشل رفع إحدى الصور");
+
+        const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${path}`;
+
+        const { error: insertImgErr } = await supabase
+          .from("indicators_images")
+          .insert({
+            device_id: productToEdit.id,
+            url: imageUrl,
+          });
+
+        if (insertImgErr) throw new Error(insertImgErr.message);
+      });
+
+      await Promise.all(uploadPromises);
+
+      toast.success("تمت الإضافة بنجاح");
+      handleCloseAddModal();
+      getIndicators();
+    } catch (err) {
+      toast.error((err as Error).message || "حدث خطأ غير متوقع");
+    } finally {
+      setIsLoading(false);
     }
-
-    const { error } = await supabase.from("indicators").insert({
-      ...productToEdit,
-      image,
-      video,
-    });
-
-    if (error) toast.error(error.message);
-    else toast.success("تمت الإضافة بنجاح");
-
-    handleCloseAddModal();
-    getIndicators();
-    setIsLoading(false);
   };
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +221,12 @@ const IndicatorsPage = () => {
         isOpen={isAddModalOpen}
         closeModal={handleCloseAddModal}
       >
-        <DeviceForm fields={FieldsType} onChange={handleChange} />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChange}
+          setImages={setImages}
+          setVideo={setVideo}
+        />
       </MyModal>
 
       {/* Cards */}

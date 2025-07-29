@@ -21,7 +21,7 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
-import { DeviceUnion, formConfig } from "@/app/interface/interface";
+import { DeviceUnion, formConfig, Images } from "@/app/interface/interface";
 import MyModal from "@/app/UI/MyModal";
 import { supabase } from "../lib/Supabase";
 import toast from "react-hot-toast";
@@ -43,6 +43,9 @@ export default function ProductDetails() {
   const [productToEdit, setProductToEdit] = useState<DeviceUnion>(
     {} as DeviceUnion
   );
+  const [images, setImages] = useState<Images[]>([]);
+  const [imagesToUpload, setImagesToUpload] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -71,9 +74,23 @@ export default function ProductDetails() {
     setIsDeleteModalOpen(false);
   };
 
+  const getDeviceImages = useCallback(async () => {
+    const { data, error } = await supabase
+      .from(`${deviceType}_images`)
+      .select("*")
+      .eq("device_id", id);
+
+    if (error) {
+      console.log("failed to load image :" + error.message);
+    } else {
+      setImages(data);
+    }
+  }, [deviceType, id]);
+
   const getProduct = useCallback(async () => {
     setIsLoading(true);
     if (!id) return;
+
     const { data, error } = await supabase
       .from(`${deviceType}`)
       .select("*")
@@ -91,20 +108,22 @@ export default function ProductDetails() {
       }
       setIsLoading(false);
     }
-  }, [id, deviceType]);
+  }, [deviceType, id]);
 
   useEffect(() => {
-    getProduct();
-  }, [getProduct]);
+    (async () => {
+      setIsLoading(true);
+      await Promise.all([getProduct(), getDeviceImages()]);
+      setIsLoading(false);
+    })();
+  }, [getProduct, getDeviceImages]);
 
+  const MainImage = images[0]?.url || null;
   const handelChangeProductToEdit = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-    if (type === "file") {
-      const file = (e.target as HTMLInputElement).files?.[0] || null;
-      setProductToEdit((prev) => ({ ...prev, [name]: file }));
-    } else if (type === "checkbox") {
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setProductToEdit((prev) => ({ ...prev, [name]: checked }));
     } else {
@@ -113,81 +132,78 @@ export default function ProductDetails() {
   };
 
   const handelSaveProductToEdit = async () => {
-    if (!productToEdit.tag || !productToEdit.image) {
-      return toast.error("علي الاقل يجب تحديد التاج و صورة الجهاز");
-    }
+    if (!productToEdit.tag )
+      return toast.error("علي الاقل يجب تحديد التاج  الجهاز");
 
-    if (!id) return;
+    if (imagesToUpload.length === 0)
+      return toast.error("علي الاقل يجب تحديد صورة واحدة على الأقل");
+
+    if (!video) return toast.error("علي الاقل يجب تحديد فيديو");
 
     setIsLoading(true);
 
-    // 1. رفع الصورة إلى Supabase Storage
-    let imageUrl = "";
-    if (productToEdit.image instanceof File) {
-      const { error: imgErr } = await supabase.storage
-        .from("media")
-        .upload(`images/${uniqueName}.jpg`, productToEdit.image, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-
-      if (imgErr) {
-        setIsLoading(false);
-        return toast.error("حدث خطأ أثناء رفع الصورة أو أنها موجودة بالفعل");
-      }
-
-      // توليد رابط الصورة
-      imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueName}.jpg`;
-    } else {
-      // لو مش ملف (يعني هو رابط قديم)، احتفظ بيه زي ما هو
-      imageUrl = productToEdit.image;
-    }
-
-    // 2. رفع الفيديو إلى Supabase Storage
-    let videoUrl = "";
-    if (productToEdit.video instanceof File) {
+    try {
+      // رفع الفيديو
       const { error: vidErr } = await supabase.storage
         .from("media")
-        .update(`videos/${uniqueName}.mp4`, productToEdit.video, {
+        .update(`videos/${uniqueName}.mp4`, video, {
           contentType: "video/mp4",
           upsert: true,
         });
 
-      if (vidErr) {
-        setIsLoading(false);
-        return toast.error("حدث خطأ أثناء رفع الفيديو أو أنه موجود بالفعل");
-      }
+      if (vidErr)
+        throw new Error("حدث خطأ أثناء رفع الفيديو أو أنه موجود بالفعل");
 
-      // توليد رابط الفيديو
-      videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
-    } else {
-      // لو مش ملف (يعني هو رابط قديم)، احتفظ بيه زي ما هو
-      videoUrl = productToEdit.video;
-    }
+      const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
 
-    // 3. تحديث بيانات الجهاز في قاعدة البيانات
-    const { error } = await supabase
-      .from(`${deviceType}`)
-      .update({
-        ...productToEdit,
-        image: imageUrl,
-        video: videoUrl,
-      })
-      .eq("id", id);
+      // تحديث بيانات الجهاز
+      const { error: updateError } = await supabase
+        .from(`${deviceType}`)
+        .update({ ...productToEdit, video: videoUrl })
+        .eq("id", id);
 
-    setIsLoading(false);
+      if (updateError) throw new Error(updateError.message);
 
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
-    } else {
+      // رفع الصور
+      await Promise.all(
+        imagesToUpload.map(async (img) => {
+          const imgId = uuidv4();
+
+          const { error: uploadError } = await supabase.storage
+            .from("media")
+            .upload(`images/${imgId}`, img, {
+              contentType: img.type,
+            });
+
+          if (uploadError)
+            throw new Error("فشل في رفع صورة: " + uploadError.message);
+
+          const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${imgId}`;
+
+          const { error: insertError } = await supabase
+            .from(`${deviceType}_images`)
+            .insert({
+              device_id: id,
+              url: imageUrl,
+            });
+
+          if (insertError)
+            throw new Error("فشل في حفظ رابط الصورة: " + insertError.message);
+        })
+      );
+
       toast.success("تم التعديل بنجاح");
       getProduct();
+      getDeviceImages();
       handleCloseEditModal();
+    } catch (err) {
+      if (err instanceof Error) toast.error(err.message);
+    } finally {
       setIsLoading(false);
     }
   };
 
+  console.log(productToEdit, imagesToUpload, video);
   const handleSaveProductToDelete = async () => {
     if (!id) return;
     setIsLoading(true);
@@ -273,11 +289,30 @@ export default function ProductDetails() {
                 </Select>
               )}
 
-              {f.type === "file" && (
+              {f.type === "file" && f.name === "image" && (
+                <Input
+                  name={f.name}
+                  multiple
+                  type="file"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files) {
+                      setImagesToUpload(Array.from(files));
+                    }
+                  }}
+                />
+              )}
+              {/*  */}
+              {f.type === "file" && f.name === "video" && (
                 <Input
                   name={f.name}
                   type="file"
-                  onChange={handelChangeProductToEdit}
+                  onChange={(e) => {
+                    const video = e.target.files?.[0] || null;
+                    if (video) {
+                      setVideo(video);
+                    }
+                  }}
                 />
               )}
 
@@ -327,14 +362,44 @@ export default function ProductDetails() {
       >
         <Box w="100%" maxW="650px">
           <Image
-            src={product.image as string}
+            src={MainImage as string}
             alt="device image"
             width="100%"
             height={"auto"}
+            mb={4}
             objectFit="cover"
             borderRadius="md"
             fallbackSrc="https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt"
           />
+          {/* Thumbnails */}
+          <HStack spacing={3} overflowX="auto" justifyContent={"center"}>
+            {images.map((img, index) => (
+              <Image
+                key={img.url}
+                src={img.url}
+                alt={`thumbnail ${index + 1}`}
+                boxSize="70px"
+                borderRadius="md"
+                objectFit="cover"
+                border={
+                  MainImage === img.url
+                    ? "2px solid #3182ce"
+                    : "2px solid transparent"
+                }
+                cursor="pointer"
+                onClick={() => {
+                  const selected = images.find((i) => i.url === img.url);
+                  if (selected) {
+                    const reordered = [
+                      selected,
+                      ...images.filter((i) => i.url !== selected.url),
+                    ];
+                    setImages(reordered);
+                  }
+                }}
+              />
+            ))}
+          </HStack>
         </Box>
 
         <VStack align="start" spacing={4} flex="1" textAlign="right" dir="rtl">
