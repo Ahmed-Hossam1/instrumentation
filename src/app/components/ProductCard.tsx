@@ -30,17 +30,17 @@ const ProductCard = ({ id, type, status, image, tag, name }: IProps) => {
       bg={imageBg}
     >
       <Image
-        src={typeof image === "string" ? image : URL.createObjectURL(image)}
+        src={
+          image
+            ? (image as string)
+            : "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+        }
         alt={tag}
         w="100%"
-        maxH={{ base: "180px", md: "200px", lg: "220px" }} // ✅ تحديد أقصى ارتفاع
+        maxH={{ base: "180px", md: "200px", lg: "220px" }}
         objectFit="contain"
         borderTopRadius="md"
         bg="white"
-        onError={(e) => {
-          e.currentTarget.src =
-            "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3";
-        }}
       />
       <CardBody>
         <VStack align="start" spacing={1}>

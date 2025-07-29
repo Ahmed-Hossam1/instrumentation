@@ -29,7 +29,6 @@ const TransmittersPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [products, setProducts] = useState<Transmitter[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [productToEdit, setProductToEdit] = useState({
     deviceType: "transmitters",
   } as Transmitter);
@@ -81,6 +80,7 @@ const TransmittersPage = () => {
 
   // ========== Modal Handlers ==========
   const handleOpenAddModal = () => setIsAddModalOpen(true);
+  
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setProductToEdit({ deviceType: "transmitters" } as Transmitter);

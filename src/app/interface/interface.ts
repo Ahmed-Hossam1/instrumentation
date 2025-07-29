@@ -5,7 +5,7 @@ export interface DeviceBase {
   type: string;
   location: string;
   status: string | "يعمل" | "لا يعمل" | "تالف" | "يحتاج إلى معايرة";
-  image: string | File  ;
+  image: string | File;
   video: string | File;
   needs_scaffold: boolean;
   needs_isolation: boolean;
