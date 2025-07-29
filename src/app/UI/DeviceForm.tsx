@@ -14,8 +14,8 @@ import type { Field } from "../interface/interface";
 type Props = {
   fields: Field[];
   onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  setImages: (files: File[]) => void;
-  setVideo: ({}: File) => void;
+  setImages?: (files: File[]) => void;
+  setVideo?: ({}: File) => void;
 };
 
 export default function DeviceForm({
@@ -61,7 +61,7 @@ export default function DeviceForm({
               accept="image/*"
               onChange={(e) => {
                 const images = e.target.files;
-                if (images) {
+                if (images && setImages) {
                   setImages(Array.from(images));
                 }
               }}
@@ -69,7 +69,6 @@ export default function DeviceForm({
             />
           )}
 
-          {/* =======video================= */}
           {f.type === "file" && f.name === "video" && (
             <Input
               name={f.name}
@@ -77,7 +76,7 @@ export default function DeviceForm({
               type="file"
               onChange={(e) => {
                 const video = e.target.files?.[0] || null;
-                if (video) {
+                if (video && setVideo) {
                   setVideo(video);
                 }
               }}
