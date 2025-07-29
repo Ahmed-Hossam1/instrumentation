@@ -29,6 +29,7 @@ const TransmittersPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [products, setProducts] = useState<Transmitter[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [productToEdit, setProductToEdit] = useState({
     deviceType: "transmitters",
   } as Transmitter);
@@ -115,12 +116,7 @@ const TransmittersPage = () => {
     }
   };
 
-  // const handleUpload = async () => {
-  //   if(!productToEdit.image) return ;
-
-  //   const result  = productToEdit.image.
-
-  // }
+  
 
   // ========== Save Handler ==========
   const handleSave = async () => {
@@ -143,14 +139,11 @@ const TransmittersPage = () => {
     if (!productToEdit.status) return toast.error("يجب اختيار حالة الجهاز");
     if (!productToEdit.location) return toast.error("يجب اختيار موقع الجهاز");
     if (!productToEdit.image) return toast.error("يجب اختيار صورة الجهاز");
-    if (!productToEdit.last_calibration)
-      return toast.error("يجب اختيار تاريخ آخر معايرة");
     if (!productToEdit.range)
       return toast.error("يجب تحديد نطاق اختبار الجهاز");
     if (!productToEdit.created_at)
       return toast.error("يجب اختيار تاريخ إنشاء الجهاز");
 
-    const { id } = productToEdit;
     setIsLoading(true);
 
     // === Upload Image ===
@@ -209,6 +202,7 @@ const TransmittersPage = () => {
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
+
   const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
   };
@@ -241,7 +235,10 @@ const TransmittersPage = () => {
         isOpen={isAddModalOpen}
         closeModal={handleCloseAddModal}
       >
-        <DeviceForm fields={FieldsType} onChange={handleChange}  />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChange}
+        />
       </MyModal>
 
       {/* Product Cards */}
