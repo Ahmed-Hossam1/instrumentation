@@ -9,6 +9,7 @@ import {
 import { Images } from "../interface/interface";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/Supabase";
+import MySkeleton from "./MySkeleton";
 
 interface IProps {
   deviceType: string;
@@ -51,17 +52,18 @@ const ProductCard = ({ id, type, status, tag, name, deviceType }: IProps) => {
       bg={imageBg}
     >
       <Image
-        src={
-          MainImage
-            ? MainImage
-            : "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
-        }
+        src={MainImage as string}
         alt={tag}
         w="100%"
         maxH={{ base: "180px", md: "200px", lg: "220px" }}
         objectFit="contain"
         borderTopRadius="md"
         bg="white"
+        fallback={<MySkeleton />}
+        onError={(e) => {
+          e.currentTarget.src =
+            "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3";
+        }}
       />
       <CardBody>
         <VStack align="start" spacing={1}>

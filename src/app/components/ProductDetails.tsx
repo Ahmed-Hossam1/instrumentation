@@ -19,6 +19,7 @@ import {
   Button,
   Checkbox,
   SimpleGrid,
+  IconButton,
 } from "@chakra-ui/react";
 import { useCallback, useEffect, useState } from "react";
 import { DeviceUnion, formConfig, Images } from "@/app/interface/interface";
@@ -34,9 +35,23 @@ import {
   MdInfo,
   MdLocationOn,
   MdSecurity,
+  MdDelete,
 } from "react-icons/md";
 import { v4 as uuidv4 } from "uuid";
 import { TbTools } from "react-icons/tb";
+
+/**
+ * كامل: ProductDetails component
+ * - يعرض المنتج
+ * - يفتح مودال تعديل يحتوي على الصور الحالية + معاينات لصور جديدة + زر لحذف صور حالية
+ * - يعرض الفيديو الحالي داخل المودال و يسمح باستبداله
+ * - عند الحفظ: يرفع الفيديو (لو تم تغييره)، يرفع الصور الجديدة، ويحذف روابط الصور المطلوبة من جدول الصور
+ */
+
+type FileWithPreview = {
+  file: File;
+  preview: string;
+};
 
 export default function ProductDetails() {
   const [product, setProduct] = useState<DeviceUnion>({} as DeviceUnion);
@@ -44,53 +59,43 @@ export default function ProductDetails() {
     {} as DeviceUnion
   );
   const [images, setImages] = useState<Images[]>([]);
-  const [imagesToUpload, setImagesToUpload] = useState<File[]>([]);
-  const [video, setVideo] = useState<File>({} as File);
+  const [imagesToUpload, setImagesToUpload] = useState<FileWithPreview[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const { deviceType, id } = useParams();
+
+  const params = useParams() as { deviceType?: string; id?: string };
+  const deviceType = params.deviceType || "";
+  const id = params.id || "";
   const router = useRouter();
   const Fields = formConfig;
+  const FieldsType = Fields[deviceType as keyof typeof Fields] || [];
+  const cardBg = useColorModeValue("white", "gray.800");
 
-  /* We're using `as keyof typeof Fields` to explicitly tell TypeScript that `deviceType` is one of the valid keys of the `Fields` object.
-  Without this assertion, TypeScript may throw an error because it can't be sure that `deviceType` matches a key in `Fields`.
- This cast ensures we can safely access Fields[deviceType] without a compile-time error.
- */
-  const FieldsType = Fields[deviceType as keyof typeof Fields];
   const uniqueName = uuidv4();
 
-  /*============= Functions ==============*/
-  const handleOpeEditModal = () => {
-    setIsEditModalOpen(true);
-  };
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-  };
-  const handleOpeDeleteModal = () => {
-    setIsDeleteModalOpen(true);
-  };
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-  };
-
+  /* ======== Fetchers ======== */
   const getDeviceImages = useCallback(async () => {
+    if (!deviceType || !id) return;
     const { data, error } = await supabase
       .from(`${deviceType}_images`)
       .select("*")
       .eq("device_id", id);
 
     if (error) {
-      console.log("failed to load image :" + error.message);
+      console.error("failed to load image :" + error.message);
+      toast.error("فشل في جلب صور الجهاز");
     } else {
-      setImages(data);
+      setImages(data ?? []);
     }
   }, [deviceType, id]);
 
   const getProduct = useCallback(async () => {
+    if (!deviceType || !id) return;
     setIsLoading(true);
-    if (!id) return;
-
     const { data, error } = await supabase
       .from(`${deviceType}`)
       .select("*")
@@ -98,16 +103,15 @@ export default function ProductDetails() {
 
     if (error) {
       toast.error(error.message);
-      setIsLoading(false);
     } else {
       if (data && data.length > 0) {
         setProduct(data[0]);
-        setProductToEdit(data[0]);
+        setProductToEdit(data[0]); // prefill edit form
       } else {
         toast.error("لم يتم العثور على المنتج");
       }
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }, [deviceType, id]);
 
   useEffect(() => {
@@ -116,9 +120,43 @@ export default function ProductDetails() {
       await Promise.all([getProduct(), getDeviceImages()]);
       setIsLoading(false);
     })();
+    // cleanup previews on unmount
+    return () => {
+      imagesToUpload.forEach((p) => URL.revokeObjectURL(p.preview));
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getProduct, getDeviceImages]);
 
   const MainImage = images[0]?.url || null;
+
+  /* ======== Handlers ======== */
+
+  const handleOpenEditModal = () => {
+    // reset upload/delete states and prefill productToEdit
+    setProductToEdit(product);
+    setImagesToUpload([]);
+    setImagesToDelete([]);
+    setVideo(null);
+    setVideoPreview(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    // revoke previews
+    imagesToUpload.forEach((p) => URL.revokeObjectURL(p.preview));
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+
+    setImagesToUpload([]);
+    setImagesToDelete([]);
+    setVideo(null);
+    setVideoPreview(null);
+    setIsEditModalOpen(false);
+  };
+
+  const handleOpenDeleteModal = () => setIsDeleteModalOpen(true);
+  const handleCloseDeleteModal = () => setIsDeleteModalOpen(false);
+
   const handelChangeProductToEdit = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -131,32 +169,67 @@ export default function ProductDetails() {
     }
   };
 
+  // Add new image files and create previews
+  const handleAddImages = (files: FileList | null) => {
+    if (!files) return;
+    const newPreviews: FileWithPreview[] = Array.from(files).map((f) => ({
+      file: f,
+      preview: URL.createObjectURL(f),
+    }));
+    setImagesToUpload((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveNewImage = (index: number) => {
+    const removed = imagesToUpload[index];
+    if (removed) URL.revokeObjectURL(removed.preview);
+    setImagesToUpload((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // toggle mark image for deletion (by url)
+  const handleToggleDeleteImage = (url: string) => {
+    setImagesToDelete((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  };
+
+  const handleSelectVideo = (file: File | null) => {
+    if (!file) return;
+    // revoke old preview
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    const preview = URL.createObjectURL(file);
+    setVideo(file);
+    setVideoPreview(preview);
+  };
+
+  /* ======== Save (edit) ======== */
   const handelSaveProductToEdit = async () => {
-    if (!productToEdit.tag )
-      return toast.error("علي الاقل يجب تحديد التاج  الجهاز");
-
-    if (imagesToUpload.length === 0)
-      return toast.error("علي الاقل يجب تحديد صورة واحدة على الأقل");
-
-    if (!video) return toast.error("علي الاقل يجب تحديد فيديو");
+    // basic validation
+    if (!productToEdit.tag)
+      return toast.error("علي الاقل يجب تحديد التاج للجهاز");
 
     setIsLoading(true);
 
     try {
-      // رفع الفيديو
-      const { error: vidErr } = await supabase.storage
-        .from("media")
-        .update(`videos/${uniqueName}.mp4`, video, {
-          contentType: "video/mp4",
-          upsert: true,
-        });
+      // 1) upload new video if present
+      let videoUrl = product.video ?? null;
+      if (video) {
+        const vidId = uuidv4();
+        const ext =
+          video.type === "video/mp4"
+            ? "mp4"
+            : video.name.split(".").pop() || "mp4";
+        const path = `videos/${vidId}.${ext}`;
+        const { error: vidErr } = await supabase.storage
+          .from("media")
+          .upload(path, video, { contentType: video.type, upsert: true });
 
-      if (vidErr)
-        throw new Error("حدث خطأ أثناء رفع الفيديو أو أنه موجود بالفعل");
+        if (vidErr)
+          throw new Error("حدث خطأ أثناء رفع الفيديو: " + vidErr.message);
 
-      const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
+        videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${path}`;
+      }
 
-      // تحديث بيانات الجهاز
+      // 2) update main product row (with new video url if changed)
       const { error: updateError } = await supabase
         .from(`${deviceType}`)
         .update({ ...productToEdit, video: videoUrl })
@@ -164,46 +237,59 @@ export default function ProductDetails() {
 
       if (updateError) throw new Error(updateError.message);
 
-      // رفع الصور
-      await Promise.all(
-        imagesToUpload.map(async (img) => {
-          const imgId = uuidv4();
+      // 3) delete marked images from images table
+      if (imagesToDelete.length > 0) {
+        const { error: delErr } = await supabase
+          .from(`${deviceType}_images`)
+          .delete()
+          .in("url", imagesToDelete);
+        if (delErr)
+          throw new Error("فشل في حذف روابط الصور: " + delErr.message);
+      }
 
-          const { error: uploadError } = await supabase.storage
-            .from("media")
-            .upload(`images/${imgId}`, img, {
-              contentType: img.type,
-            });
+      // 4) upload new images (if any) and insert records
+      if (imagesToUpload.length > 0) {
+        await Promise.all(
+          imagesToUpload.map(async (p) => {
+            const imgId = uuidv4();
+            const ext = p.file.name.split(".").pop() || "jpg";
+            const path = `images/${imgId}.${ext}`;
 
-          if (uploadError)
-            throw new Error("فشل في رفع صورة: " + uploadError.message);
+            const { error: uploadError } = await supabase.storage
+              .from("media")
+              .upload(path, p.file, { contentType: p.file.type });
 
-          const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${imgId}`;
+            if (uploadError)
+              throw new Error("فشل في رفع صورة: " + uploadError.message);
 
-          const { error: insertError } = await supabase
-            .from(`${deviceType}_images`)
-            .insert({
-              device_id: id,
-              url: imageUrl,
-            });
+            const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${path}`;
 
-          if (insertError)
-            throw new Error("فشل في حفظ رابط الصورة: " + insertError.message);
-        })
-      );
+            const { error: insertError } = await supabase
+              .from(`${deviceType}_images`)
+              .insert({
+                device_id: id,
+                url: imageUrl,
+              });
+
+            if (insertError)
+              throw new Error("فشل في حفظ رابط الصورة: " + insertError.message);
+          })
+        );
+      }
 
       toast.success("تم التعديل بنجاح");
-      getProduct();
-      getDeviceImages();
+      // refresh product and images
+      await Promise.all([getProduct(), getDeviceImages()]);
       handleCloseEditModal();
     } catch (err) {
       if (err instanceof Error) toast.error(err.message);
+      else toast.error("حدث خطأ غير متوقع");
     } finally {
       setIsLoading(false);
     }
   };
 
-  console.log(productToEdit, imagesToUpload, video);
+  /* ======== Delete product ======== */
   const handleSaveProductToDelete = async () => {
     if (!id) return;
     setIsLoading(true);
@@ -213,14 +299,13 @@ export default function ProductDetails() {
       .eq("id", id);
     if (error) {
       toast.error(error.message);
-      setIsLoading(false);
     } else {
       toast.success("تم الحذف بنجاح");
       router.push(`/${deviceType}`);
     }
+    setIsLoading(false);
   };
 
-  const cardBg = useColorModeValue("white", "gray.800");
   const getStatusColor = (s: string) =>
     s === "يعمل"
       ? "green"
@@ -264,7 +349,7 @@ export default function ProductDetails() {
               {f.type === "text" && (
                 <Input
                   name={f.name}
-                  type={f.type}
+                  type="text"
                   isDisabled={f.name === "id"}
                   value={String(
                     productToEdit[f.name as keyof DeviceUnion] ?? ""
@@ -289,31 +374,125 @@ export default function ProductDetails() {
                 </Select>
               )}
 
+              {/* صور موجودة + صور جديدة */}
               {f.type === "file" && f.name === "image" && (
-                <Input
-                  name={f.name}
-                  multiple
-                  type="file"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files) {
-                      setImagesToUpload(Array.from(files));
-                    }
-                  }}
-                />
+                <>
+                  <Text mb={2}>
+                    الصور الحالية (اضغط على زر الحذف لو عايز تمسحها قبل الحفظ)
+                  </Text>
+                  <HStack spacing={3} wrap="wrap" mb={3}>
+                    {images.length > 0 ? (
+                      images.map((img) => {
+                        const marked = imagesToDelete.includes(img.url);
+                        return (
+                          <Box key={img.id ?? img.url} position="relative">
+                            <Image
+                              src={img.url}
+                              alt="current"
+                              boxSize="80px"
+                              borderRadius="md"
+                              objectFit="cover"
+                              opacity={marked ? 0.4 : 1}
+                            />
+                            <IconButton
+                              aria-label={marked ? "الغاء حذف" : "حذف"}
+                              icon={<MdDelete />}
+                              size="xs"
+                              colorScheme={marked ? "green" : "red"}
+                              position="absolute"
+                              top={1}
+                              right={1}
+                              onClick={() => handleToggleDeleteImage(img.url)}
+                            />
+                            {marked && (
+                              <Box
+                                position="absolute"
+                                bottom={1}
+                                left={1}
+                                bg="red.500"
+                                px={2}
+                                py={0.5}
+                                color="white"
+                                borderRadius="md"
+                                fontSize="xs"
+                              >
+                                سيتم الحذف
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })
+                    ) : (
+                      <Text>لا توجد صور حالياً</Text>
+                    )}
+                  </HStack>
+
+                  <Text mb={2}>صور جديدة (معاينة)</Text>
+                  <HStack spacing={3} wrap="wrap" mb={2}>
+                    {imagesToUpload.map((p, idx) => (
+                      <Box key={p.preview} position="relative">
+                        <Image
+                          src={p.preview}
+                          alt={`new ${idx}`}
+                          boxSize="80px"
+                          borderRadius="md"
+                          objectFit="cover"
+                        />
+                        <IconButton
+                          aria-label="remove"
+                          icon={<MdDelete />}
+                          size="xs"
+                          colorScheme="red"
+                          position="absolute"
+                          top={1}
+                          right={1}
+                          onClick={() => handleRemoveNewImage(idx)}
+                        />
+                      </Box>
+                    ))}
+                  </HStack>
+
+                  <Input
+                    name={f.name}
+                    multiple
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleAddImages(e.target.files)}
+                  />
+                </>
               )}
-              {/*  */}
+
+              {/* فيديو */}
               {f.type === "file" && f.name === "video" && (
-                <Input
-                  name={f.name}
-                  type="file"
-                  onChange={(e) => {
-                    const video = e.target.files?.[0] || null;
-                    if (video) {
-                      setVideo(video);
-                    }
-                  }}
-                />
+                <>
+                  <Text mb={2}>فيديو توضيحي (يمكن استبداله)</Text>
+                  <Box mb={2}>
+                    {videoPreview ? (
+                      <video
+                        src={videoPreview}
+                        controls
+                        style={{ width: "100%", maxHeight: 200 }}
+                      />
+                    ) : product.video ? (
+                      <video
+                        src={product.video}
+                        controls
+                        style={{ width: "100%", maxHeight: 200 }}
+                      />
+                    ) : (
+                      <Text color="gray.500">لا يوجد فيديو حالياً</Text>
+                    )}
+                  </Box>
+                  <Input
+                    name={f.name}
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const v = e.target.files?.[0] || null;
+                      if (v) handleSelectVideo(v);
+                    }}
+                  />
+                </>
               )}
 
               {f.type === "checkbox" && (
@@ -355,38 +534,42 @@ export default function ProductDetails() {
         <Text> {product.tag} هل أنت متأكد من حذف هذا المنتج </Text>
       </MyModal>
 
+      {/* Main display */}
       <Flex
         direction={{ base: "column", md: "row" }}
-        gap={8}
+        gap={10}
         align="flex-start"
       >
-        <Box w="100%" maxW="650px">
+        {/* صورة الجهاز */}
+        <Box w="100%" maxW="600px">
           <Image
-            src={MainImage as string}
+            src={(MainImage as string) || undefined}
             alt="device image"
-            width="100%"
-            height={"auto"}
-            mb={4}
+            w="100%"
+            h="auto"
+            mb={3}
             objectFit="cover"
-            borderRadius="md"
+            borderRadius="lg"
+            shadow="md"
             fallbackSrc="https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt"
           />
-          {/* Thumbnails */}
-          <HStack spacing={3} overflowX="auto" justifyContent={"center"}>
+          {/* الصور المصغرة */}
+          <HStack spacing={3} overflowX="auto" justifyContent="center">
             {images.map((img, index) => (
               <Image
-                key={img.url}
+                key={img.id ?? img.url}
                 src={img.url}
                 alt={`thumbnail ${index + 1}`}
-                boxSize="70px"
+                boxSize="80px"
                 borderRadius="md"
                 objectFit="cover"
                 border={
                   MainImage === img.url
-                    ? "2px solid #3182ce"
+                    ? "3px solid #3182ce"
                     : "2px solid transparent"
                 }
                 cursor="pointer"
+                _hover={{ border: "2px solid #63b3ed" }}
                 onClick={() => {
                   const selected = images.find((i) => i.url === img.url);
                   if (selected) {
@@ -402,39 +585,45 @@ export default function ProductDetails() {
           </HStack>
         </Box>
 
-        <VStack align="start" spacing={4} flex="1" textAlign="right" dir="rtl">
-          {/* النوع */}
+        {/* تفاصيل الجهاز */}
+        <VStack
+          align={"flex-start"}
+          spacing={4}
+          flex="1"
+          textAlign="right"
+          dir="rtl"
+          w="100%"
+        >
           <HStack>
-            <MdInfo color="#3182ce" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdInfo color="#3182ce" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               النوع:
             </Text>
             <Text fontSize="lg">{product.type || "غير محدد"}</Text>
           </HStack>
 
-          {/* الرينج */}
-          {deviceType != "valves" && "range" in product && (
+          {deviceType !== "valves" && "range" in product && (
             <HStack>
-              <MdInfo color="#805ad5" size={20} />
-              <Text fontWeight="bold" fontSize="lg">
+              <MdInfo color="#805ad5" size={22} />
+              <Text fontWeight="bold" fontSize="xl">
                 الرينج:
               </Text>
               <Text fontSize="lg">{product.range || "غير محدد"}</Text>
             </HStack>
           )}
+
           <HStack>
-            <TbTools color="#3182ce" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <TbTools color="#3182ce" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               الفيتينج:
             </Text>
             <Text fontSize="lg">غير محدد</Text>
           </HStack>
 
-          {/* Set Point */}
           {deviceType === "switches" && "set_point" in product && (
             <HStack>
-              <MdBuild color="#4fd1c5" size={20} />
-              <Text fontWeight="bold" fontSize="lg">
+              <MdBuild color="#4fd1c5" size={22} />
+              <Text fontWeight="bold" fontSize="xl">
                 نقطه التلقيط:
               </Text>
               <Text fontSize="lg">{product?.set_point || "غير محدد"}</Text>
@@ -442,45 +631,51 @@ export default function ProductDetails() {
           )}
 
           <HStack>
-            <MdInfo color="#d69e2e" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdInfo color="#d69e2e" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               الحالة:
             </Text>
-            <Badge fontSize="lg" colorScheme={getStatusColor(product.status)}>
+            <Badge
+              fontSize="md"
+              px={3}
+              py={1}
+              borderRadius="md"
+              colorScheme={getStatusColor(product.status)}
+            >
               {product.status}
             </Badge>
           </HStack>
 
           <HStack>
-            <MdLocationOn color="#3182ce" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdLocationOn color="#3182ce" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               الموقع:
             </Text>
-            <Text fontSize="lg">{product.location}</Text>
+            <Text fontSize="lg">{product.location || "غير محدد"}</Text>
           </HStack>
 
           <HStack align="start">
-            <MdDescription color="#805ad5" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdDescription color="#805ad5" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               الوصف:
             </Text>
             <Text fontSize="lg">{product.description || "لا يوجد وصف"}</Text>
           </HStack>
 
           <HStack>
-            <MdDateRange color="#4fd1c5" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdDateRange color="#4fd1c5" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               تاريخ الاضافه:
             </Text>
             <Text fontSize="lg">{product.created_at}</Text>
           </HStack>
 
           <HStack>
-            <MdBuild color="#48bb78" size={20} />
-            <Text fontWeight="bold" fontSize="lg">
+            <MdBuild color="#48bb78" size={22} />
+            <Text fontWeight="bold" fontSize="xl">
               قطع الغيار:
             </Text>
-            <Badge fontSize="lg" colorScheme={"green"}>
+            <Badge fontSize="md" px={3} py={1} colorScheme="green">
               {product.howManySpares > 0
                 ? `✅ ${product.howManySpares}`
                 : "يوجد قطع غيار بالمخزن"}
@@ -491,7 +686,9 @@ export default function ProductDetails() {
 
           <HStack spacing={4}>
             <Badge
-              fontSize="lg"
+              fontSize="md"
+              px={3}
+              py={1}
               colorScheme={product.needs_scaffold ? "red" : "green"}
             >
               <HStack>
@@ -503,7 +700,9 @@ export default function ProductDetails() {
             </Badge>
 
             <Badge
-              fontSize="lg"
+              fontSize="md"
+              px={3}
+              py={1}
               colorScheme={product.needs_isolation ? "red" : "green"}
             >
               <HStack>
@@ -514,17 +713,20 @@ export default function ProductDetails() {
               </HStack>
             </Badge>
           </HStack>
+
           <HStack>
-            <Button onClick={handleOpeEditModal} bg={"blue.400"} _hover="none">
-              {" "}
-              تعديل بيانت الجهاز
+            <Button
+              onClick={handleOpenEditModal}
+              bg="blue.400"
+              _hover={{ bg: "blue.500" }}
+            >
+              تعديل بيانات الجهاز
             </Button>
             <Button
-              onClick={handleOpeDeleteModal}
-              bg={"red.400"}
-              _hover=" none"
+              onClick={handleOpenDeleteModal}
+              bg="red.400"
+              _hover={{ bg: "red.500" }}
             >
-              {" "}
               حذف الجهاز
             </Button>
           </HStack>
@@ -536,11 +738,15 @@ export default function ProductDetails() {
           🎥 فيديو توضيحي
         </Heading>
         <Box borderRadius="md" overflow="hidden">
-          <video
-            controls
-            src={product.video}
-            style={{ width: "100%", maxHeight: "500px", borderRadius: "8px" }}
-          />
+          {product.video ? (
+            <video
+              controls
+              src={product.video}
+              style={{ width: "100%", maxHeight: "500px", borderRadius: 8 }}
+            />
+          ) : (
+            <Text color="gray.500">لا يوجد فيديو توضيحي.</Text>
+          )}
         </Box>
       </Box>
     </Box>
