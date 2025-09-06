@@ -30,7 +30,7 @@ import { ReactNode } from "react";
 
 import { FiHome, FiMenu, FiChevronDown } from "react-icons/fi";
 import { MdReportProblem, MdSpeed, MdWifiTethering } from "react-icons/md";
-import { BiChip } from "react-icons/bi";
+import { BiChip, BiDevices } from "react-icons/bi";
 import { GiValve } from "react-icons/gi";
 import { TbSettingsCog } from "react-icons/tb";
 import { ImFire } from "react-icons/im";
@@ -59,6 +59,7 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
   { name: "Home", icon: FiHome, href: "/" },
+  { name: "Devices", icon: BiDevices, href: "/Devices" },
   { name: "Transmitters", icon: MdWifiTethering, href: "/transmitters" },
   { name: "Indicators", icon: MdSpeed, href: "/indicators" },
   { name: "Switches", icon: BiChip, href: "/switches" },

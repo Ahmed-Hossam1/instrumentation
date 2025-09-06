@@ -587,4 +587,25 @@ export const formConfig: Record<string, Field[]> = {
       options: ["مهم", "متوسط", "بسيط"],
     },
   ],
+
+  devices: [
+    {
+      name: "title",
+      label: "🏷️ اسم المعده",
+      type: "text",
+      placeholder: "ex: C-102",
+    },
+    {
+      name: "image",
+      label: "🖼️ صورة المعده",
+      type: "file",
+      placeholder: "ارفع صورة المعده",
+    },
+  ],
 };
+
+export interface Devices {
+  id: number;
+  image_url: string | File;
+  title: string;
+}
