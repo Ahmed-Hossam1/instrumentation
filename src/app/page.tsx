@@ -3,18 +3,7 @@
 import {
   Box,
   SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
   Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  HStack,
   useColorModeValue,
   UnorderedList,
   Text,
@@ -36,24 +25,12 @@ import { motion } from "framer-motion";
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const MotionBox = motion(Box);
-const MotionStat = motion(Stat);
 const MotionImage = motion(Image);
 const MotionHeading = motion(Heading);
-const MotionTr = motion(Tr);
 
 export default function HomePage() {
   const boxBg = useColorModeValue("white", "gray.800");
-  const statBg = useColorModeValue("gray.50", "gray.700");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
   const bg = useColorModeValue("gray.50", "gray.900");
-  const textColor = useColorModeValue("gray.800", "gray.100");
-
-  const stats = [
-    { label: "Transmitters", value: 14 },
-    { label: "Sensors", value: 8 },
-    { label: "Needs Calibration", value: 5 },
-    { label: "Devices with Issues", value: 3 },
-  ];
 
   const deviceData = {
     labels: ["Transmitters", "Sensors", "Controllers", "Valves"],
@@ -65,22 +42,6 @@ export default function HomePage() {
       },
     ],
   };
-
-  const recentDevices = [
-    {
-      id: "PT-104",
-      type: "Transmitter",
-      status: "Active",
-      updated: "2025/6/20",
-    },
-    {
-      id: "PS-445",
-      type: "Sensor",
-      status: "Needs Calibration",
-      updated: "2025/6/19",
-    },
-    { id: "FCV-202", type: "Valve", status: "Active", updated: "2025/6/18" },
-  ];
 
   const images = [
     "https://www.gasco.com.eg/wp-content/uploads/2020/12/Portal-Light-277-600x391.jpg",
@@ -106,27 +67,6 @@ export default function HomePage() {
       >
         📊 Dashboard - أجهزة المصنع
       </MotionHeading>
-
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4} mb={6}>
-        {stats.map((stat, index) => (
-          <MotionStat
-            key={stat.label}
-            p={4}
-            shadow="md"
-            borderWidth="1px"
-            borderRadius="md"
-            bg={statBg}
-            borderColor={borderColor}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.2 }}
-          >
-            <StatLabel>{stat.label}</StatLabel>
-            <StatNumber>{stat.value}</StatNumber>
-            <StatHelpText>تم التحديث مؤخرًا</StatHelpText>
-          </MotionStat>
-        ))}
-      </SimpleGrid>
 
       <Box bg={bg} minH="100vh" p={{ base: 4, md: 8 }}>
         <MotionHeading
@@ -298,45 +238,6 @@ export default function HomePage() {
           📈 توزيع الأجهزة
         </MotionHeading>
         <Bar data={deviceData} />
-      </Box>
-
-      <Box mb={6}>
-        <HStack justify="space-between" mb={2}>
-          <MotionHeading
-            size="md"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            🕓 آخر الأجهزة المضافة
-          </MotionHeading>
-        </HStack>
-
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>رقم الجهاز</Th>
-              <Th>النوع</Th>
-              <Th>الحالة</Th>
-              <Th>آخر تعديل</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {recentDevices.map((device, index) => (
-              <MotionTr
-                key={device.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.2 }}
-              >
-                <Td>{device.id}</Td>
-                <Td>{device.type}</Td>
-                <Td>{device.status}</Td>
-                <Td>{device.updated}</Td>
-              </MotionTr>
-            ))}
-          </Tbody>
-        </Table>
       </Box>
     </MotionBox>
   );

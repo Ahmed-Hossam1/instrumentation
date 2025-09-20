@@ -59,7 +59,7 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
   { name: "Home", icon: FiHome, href: "/" },
-  { name: "Devices", icon: BiDevices, href: "/Devices" },
+  { name: "Equipments", icon: BiDevices, href: "/equipments" },
   { name: "Transmitters", icon: MdWifiTethering, href: "/transmitters" },
   { name: "Indicators", icon: MdSpeed, href: "/indicators" },
   { name: "Switches", icon: BiChip, href: "/switches" },
