@@ -1,7 +1,6 @@
 "use client";
 
 import MySkeleton from "@/app/components/MySkeleton";
-import { Device_view } from "@/app/interface/interface";
 import { supabase } from "@/app/lib/Supabase";
 import PageLoader from "@/app/UI/Loader";
 import {
