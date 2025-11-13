@@ -3,6 +3,7 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import {
   Box,
+  Button,
   Card,
   CardBody,
   Heading,
@@ -16,11 +17,14 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 
 import { supabase } from "../lib/Supabase";
-import { equipments } from "../interface/interface";
+import { equipments, formConfig } from "../interface/interface";
 
 import MySkeleton from "../components/MySkeleton";
 import Pagination from "../UI/Pagination";
 import PageLoader from "../UI/Loader";
+import MyModal from "../UI/MyModal";
+import DeviceForm from "../UI/DeviceForm";
+import { v4 as uuidv4 } from "uuid";
 
 // =============================
 // Equipments Page Component
@@ -30,9 +34,16 @@ const EquipmentsPage = () => {
   // State
   // -----------------------------
   const [equipments, setEquipments] = useState<equipments[]>([]);
+  const [addEquipment, setAddEquipment] = useState<equipments>(
+    {} as equipments
+  );
+  const [images, setImages] = useState<File[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const FieldsType = formConfig["equipments"];
 
   // -----------------------------
   // Filtering
@@ -85,6 +96,60 @@ const EquipmentsPage = () => {
     getEquipments();
   }, []);
 
+  const handleChangeModal = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setAddEquipment((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleAddDevice = async () => {
+    setLoading(true);
+
+    let uploadedImageUrl = "";
+
+    await Promise.all(
+      images.map(async (file) => {
+        const imageId = uuidv4();
+        const imagePath = `images/${imageId}`;
+
+        const { error: imgUploadError } = await supabase.storage
+          .from("media")
+          .upload(imagePath, file, {
+            contentType: "image/jpeg",
+            upsert: true,
+          });
+
+        if (imgUploadError) {
+          toast.error("حدث خطأ في تحميل الصورة");
+        } else {
+          uploadedImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
+        }
+      })
+    );
+
+    const { error } = await supabase.from("equipments").insert({
+      ...addEquipment,
+      image_url: uploadedImageUrl,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("تم اضافة المعدة بنجاح");
+      getEquipments();
+      handleCloseAddModal();
+    }
+
+    setLoading(false);
+  };
+
   // -----------------------------
   // Loader
   // -----------------------------
@@ -110,6 +175,24 @@ const EquipmentsPage = () => {
         />
       </HStack>
 
+      <Button colorScheme="blue" w={"100%"} mb={8} onClick={handleOpenAddModal}>
+        اضافه معدة
+      </Button>
+
+      {/* Add Modal */}
+      <MyModal
+        ModalTitle="اضافة معدة"
+        isOpen={isAddModalOpen}
+        closeModal={handleCloseAddModal}
+        handleSave={handleAddDevice}
+      >
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleChangeModal}
+          setImages={setImages}
+        />
+      </MyModal>
+
       {/* Equipments List */}
       {currentItems.length > 0 ? (
         <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={6}>
@@ -127,8 +210,8 @@ const EquipmentsPage = () => {
                   src={equipment.image_url as string}
                   alt={equipment.code}
                   w="100%"
-                  h={{ base: "180px", md: "220px", lg: "250px" }}
-                  objectFit="cover"
+                  h={{ base: "180px", md: "220px", lg: "300px" }}
+                  objectFit="contain"
                   borderTopRadius="lg"
                   bg="gray.100"
                   fallback={<MySkeleton />}

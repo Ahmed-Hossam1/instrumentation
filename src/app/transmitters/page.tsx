@@ -131,8 +131,6 @@ const TransmittersPage = () => {
       return toast.error("يجب أن يكون رقم الجهاز مساوٍ للتاج");
 
     if (!productToEdit.type) return toast.error("اختر نوع الجهاز");
-    if (!productToEdit.status) return toast.error("اختر حالة الجهاز");
-    if (!productToEdit.location) return toast.error("اختر موقع الجهاز");
     if (!productToEdit.range) return toast.error("حدد نطاق اختبار الجهاز");
     if (!productToEdit.created_at) return toast.error("اختر تاريخ الإنشاء");
     if (images.length === 0) return toast.error("اختر صورة واحدة على الأقل");

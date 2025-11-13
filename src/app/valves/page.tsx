@@ -114,14 +114,8 @@ const ValvesPage = () => {
     if (newValve.id !== newValve.tag)
       return toast.error("[VL-1030] رقم البلف يجب أن يكون مطابق للتاج");
 
-    if (!newValve.valve_type)
-      return toast.error("[VL-1040] يجب اختيار نوع البلف");
-
-    if (!newValve.action_type)
-      return toast.error("[VL-1041] يجب اختيار نوع الحركة (Action Type)");
-
-    if (!newValve.status) return toast.error("[VL-1050] يجب اختيار حالة البلف");
-
+    if(!newValve.type) return toast.error("[VL-1040] يجب إدخال نوع البلف");
+   
     if (!newValve.location)
       return toast.error("[VL-1060] يجب اختيار موقع البلف");
 

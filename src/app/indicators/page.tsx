@@ -124,8 +124,6 @@ const IndicatorsPage = () => {
       return toast.error("يجب أن يتطابق رقم الجهاز مع التاج");
     }
     if (!productToEdit.type) return toast.error("نوع الجهاز مطلوب");
-    if (!productToEdit.location) return toast.error("الموقع مطلوب");
-    if (!productToEdit.status) return toast.error("الحالة مطلوبة");
     if (!productToEdit.created_at) return toast.error("تاريخ الإضافة مطلوب");
     if (images.length === 0) return toast.error("الصورة مطلوبة");
     if (!video) return toast.error("الفيديو مطلوب");

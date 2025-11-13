@@ -135,11 +135,8 @@ const SwitchesPage = () => {
       return toast.error("يجب أن يكون رقم الجهاز مطابق للتاج");
 
     if (!newSwitch.type) return toast.error("نوع الجهاز مطلوب");
-    if (!newSwitch.range) return toast.error("المدى (Range) مطلوب");
     if (!newSwitch.set_point)
       return toast.error("نقطة الضبط (Set Point) مطلوبة");
-    if (!newSwitch.location) return toast.error("الموقع مطلوب");
-    if (!newSwitch.status) return toast.error("حالة الجهاز مطلوبة");
     if (images.length === 0) return toast.error("يجب اختيار صورة الجهاز");
     if (!video) return toast.error("يجب اختيار فيديو الجهاز");
     if (!newSwitch.created_at) return toast.error("تاريخ الإنشاء مطلوب");

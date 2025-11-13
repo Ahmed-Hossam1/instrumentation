@@ -113,6 +113,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "select",
       options: [
         "Pressure Transmitter",
+        "Pressure Deferential Transmitter",
         "Temperature Transmitter",
         "Level Transmitter",
         "Flow Transmitter",
@@ -125,13 +126,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "text",
       placeholder: "اكتب المكان (مثلاً عند Tank 4)",
     },
-    {
-      name: "status",
-      label: "🔧 الحالة",
-      type: "select",
-      options: ["يعمل", "لا يعمل", "تالف", "يحتاج إلى معايرة"],
-      placeholder: "اختار حالة الجهاز",
-    },
+
     {
       name: "image",
       label: "🖼️ صورة",
@@ -168,18 +163,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "checkbox",
       placeholder: "هل محتاج تعزل الخط؟",
     },
-    {
-      name: "isSpareExist",
-      label: "📦 فيه قطع غيار؟",
-      type: "checkbox",
-      placeholder: "هل فيه قطع غيار متاحة؟",
-    },
-    {
-      name: "howManySpares",
-      label: "🔢 عدد قطع الغيار",
-      type: "text",
-      placeholder: "اكتب العدد (مثلاً 2)",
-    },
+
     {
       name: "description",
       label: "📝 ملاحظات",
@@ -249,31 +233,21 @@ export const formConfig: Record<string, Field[]> = {
       ],
       placeholder: "اختار نوع السويتش",
     },
-    {
-      name: "range",
-      label: "📏 النطاق",
-      type: "text",
-      placeholder: "مثلاً: 0-10 بار",
-    },
+
     {
       name: "set_point",
       label: "🎯 نقطة التشغيل",
       type: "text",
       placeholder: "مثلاً: 5 بار",
     },
+
     {
       name: "location",
       label: "📍 المكان",
       type: "text",
       placeholder: "مثلاً: Compressor Room",
     },
-    {
-      name: "status",
-      label: "⚙️ الحالة",
-      type: "select",
-      options: ["يعمل", "لا يعمل", "تالف", "يحتاج إلى معايرة"],
-      placeholder: "اختار حالة الجهاز",
-    },
+
     {
       name: "image",
       label: "🖼️ صورة",
@@ -298,18 +272,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "checkbox",
       placeholder: "هل محتاج تعزل الخط؟",
     },
-    {
-      name: "isSpareExist",
-      label: "♻️ فيه قطع غيار؟",
-      type: "checkbox",
-      placeholder: "هل متوفر قطع غيار؟",
-    },
-    {
-      name: "howManySpares",
-      label: "🔢 عدد القطع",
-      type: "text",
-      placeholder: "اكتب عدد قطع الغيار",
-    },
+
     {
       name: "description",
       label: "📝 ملاحظات",
@@ -353,54 +316,17 @@ export const formConfig: Record<string, Field[]> = {
       name: "type",
       label: "🔧 النوع",
       type: "select",
-      options: ["Shut-down", "Blue-down", "kv", "xv"],
+      options: ["Shut-down", "Blue-down", "kv", "xv", "Control Valve"],
       placeholder: "اختار نوع البلف",
     },
-    {
-      name: "valve_type",
-      label: "🧰 نوع البلف",
-      type: "select",
-      options: [
-        "Ball Valve",
-        "Gate Valve",
-        "Globe Valve",
-        "Butterfly Valve",
-        "Check Valve",
-        "Needle Valve",
-        "Pressure Relief Valve",
-        "Control Valve",
-      ],
-      placeholder: "اختار نوع حركة البلف",
-    },
-    {
-      name: "action_type",
-      label: "⚙️ نوع الحركة",
-      type: "select",
-      options: [
-        "Open/Close",
-        "Modulating",
-        "Fail Safe Open",
-        "Fail Safe Close",
-        "Manual",
-        "Pneumatic",
-        "Electric",
-        "Hydraulic",
-      ],
-      placeholder: "اختار طريقة تشغيل البلف",
-    },
+
     {
       name: "location",
       label: "📍 المكان",
       type: "text",
       placeholder: "اكتب مكان البلف (مثلاً Line 4)",
     },
-    {
-      name: "status",
-      label: "✅ الحالة",
-      type: "select",
-      options: ["يعمل", "لا يعمل", "تالف", "يحتاج إلى معايرة"],
-      placeholder: "اختار حالة البلف",
-    },
+
     {
       name: "image",
       label: "🖼️ صورة",
@@ -425,36 +351,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "checkbox",
       placeholder: "هل محتاج تعزل الخط؟",
     },
-    {
-      name: "is_control",
-      label: "🎮 بلف تحكم؟",
-      type: "checkbox",
-      placeholder: "هل البلف ده بلف تحكم؟",
-    },
-    {
-      name: "last_maintenance",
-      label: "📅 آخر صيانة",
-      type: "date",
-      placeholder: "اكتب تاريخ آخر صيانة للبلف",
-    },
-    {
-      name: "size",
-      label: "📏 المقاس",
-      type: "text",
-      placeholder: "اكتب مقاس البلف (مثلاً 2 إنش)",
-    },
-    {
-      name: "isSpareExist",
-      label: "🧩 فيه قطع غيار؟",
-      type: "checkbox",
-      placeholder: "هل فيه قطع غيار متوفرة؟",
-    },
-    {
-      name: "howManySpares",
-      label: "🔢 عدد قطع الغيار",
-      type: "text",
-      placeholder: "اكتب عدد قطع الغيار المتاحة",
-    },
+
     {
       name: "description",
       label: "📝 ملاحظات",
@@ -492,7 +389,11 @@ export const formConfig: Record<string, Field[]> = {
       name: "type",
       label: "📘 Type",
       type: "select",
-      options: ["Pressure  indicators ", "Temperature indicators "],
+      options: [
+        "Pressure  indicators ",
+        "pressure defrential indicators",
+        "Temperature indicators ",
+      ],
       placeholder: "نوع المؤشر (مثلاً Pressure, Temperature)",
     },
     {
@@ -501,13 +402,7 @@ export const formConfig: Record<string, Field[]> = {
       type: "text",
       placeholder: "ادخل موقع الجهاز",
     },
-    {
-      name: "status",
-      label: "🔧 الحالة",
-      type: "select",
-      options: ["يعمل", "لا يعمل", "تالف", "يحتاج إلى معايرة"],
-      placeholder: "اختر حالة الجهاز",
-    },
+
     {
       name: "image",
       label: "🖼️ صورة الجهاز",
@@ -531,18 +426,6 @@ export const formConfig: Record<string, Field[]> = {
       label: "🔌 يحتاج عزل؟",
       type: "checkbox",
       placeholder: "",
-    },
-    {
-      name: "isSpareExist",
-      label: "🧩 هل يوجد قطع غيار؟",
-      type: "checkbox",
-      placeholder: "",
-    },
-    {
-      name: "howManySpares",
-      label: "🔢 عدد قطع الغيار",
-      type: "text",
-      placeholder: "ادخل عدد القطع المتاحة",
     },
     {
       name: "description",
@@ -587,12 +470,27 @@ export const formConfig: Record<string, Field[]> = {
       options: ["مهم", "متوسط", "بسيط"],
     },
   ],
+
+  equipments: [
+    {
+      name: "code",
+      label: "🏷️ ادخل اسم المعده",
+      type: "text",
+      placeholder: "TK-722",
+    },
+    {
+      name: "image",
+      label: "🖼️ صورة المعده",
+      type: "file",
+      placeholder: "ارفع صورة للمعده",
+    },
+  ],
 };
 
 export interface equipments {
   id: number;
-  image_url: string | File;
   code: string;
+  image_url: string | File;
 }
 
 export interface Device_view {
