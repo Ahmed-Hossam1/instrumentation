@@ -110,6 +110,9 @@ const EquipmentsPage = () => {
   };
 
   const handleAddDevice = async () => {
+    if (!addEquipment.code || images.length === 0) {
+     return  toast.error("من فضلك ادخل اسم المعدة وصورة الجهاز");
+    }
     setLoading(true);
 
     let uploadedImageUrl = "";
@@ -226,6 +229,7 @@ const EquipmentsPage = () => {
                     fontWeight="semibold"
                     textAlign="center"
                     letterSpacing="wide"
+                    textTransform="uppercase"
                   >
                     {equipment.code}
                   </Text>

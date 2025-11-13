@@ -21,8 +21,13 @@ import {
   SimpleGrid,
   IconButton,
 } from "@chakra-ui/react";
-import { useCallback, useEffect, useState } from "react";
-import { DeviceUnion, formConfig, Images } from "@/app/interface/interface";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import {
+  DeviceUnion,
+  equipments,
+  formConfig,
+  Images,
+} from "@/app/interface/interface";
 import MyModal from "@/app/UI/MyModal";
 import { supabase } from "../lib/Supabase";
 import toast from "react-hot-toast";
@@ -39,14 +44,6 @@ import {
 } from "react-icons/md";
 import { v4 as uuidv4 } from "uuid";
 import { TbTools } from "react-icons/tb";
-
-/**
- * كامل: ProductDetails component
- * - يعرض المنتج
- * - يفتح مودال تعديل يحتوي على الصور الحالية + معاينات لصور جديدة + زر لحذف صور حالية
- * - يعرض الفيديو الحالي داخل المودال و يسمح باستبداله
- * - عند الحفظ: يرفع الفيديو (لو تم تغييره)، يرفع الصور الجديدة، ويحذف روابط الصور المطلوبة من جدول الصور
- */
 
 type FileWithPreview = {
   file: File;
@@ -66,7 +63,11 @@ export default function ProductDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [equipmentsCodes, setEquipmentsCodes] = useState<{ code: string }[]>(
+    []
+  );
+  const [linkedDeviceCode, setLinkedDeviceCode] = useState<string>("");
   const params = useParams() as { deviceType?: string; id?: string };
   const deviceType = params.deviceType || "";
   const id = params.id || "";
@@ -74,8 +75,6 @@ export default function ProductDetails() {
   const Fields = formConfig;
   const FieldsType = Fields[deviceType as keyof typeof Fields] || [];
   const cardBg = useColorModeValue("white", "gray.800");
-
-  const uniqueName = uuidv4();
 
   /* ======== Fetchers ======== */
   const getDeviceImages = useCallback(async () => {
@@ -156,6 +155,9 @@ export default function ProductDetails() {
 
   const handleOpenDeleteModal = () => setIsDeleteModalOpen(true);
   const handleCloseDeleteModal = () => setIsDeleteModalOpen(false);
+
+  const handleOpenLinkModal = () => setIsLinkModalOpen(true);
+  const handleCloseLinkModal = () => setIsLinkModalOpen(false);
 
   const handelChangeProductToEdit = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -304,6 +306,43 @@ export default function ProductDetails() {
       router.push(`/${deviceType}`);
     }
     setIsLoading(false);
+  };
+
+  useEffect(() => {
+    const getEquipmentsCodes = async () => {
+      const { error, data } = await supabase.from("equipments").select("code");
+      if (error) {
+        toast.error("فشل اكواد المعدات");
+      } else {
+        setEquipmentsCodes(data);
+      }
+    };
+
+    getEquipmentsCodes();
+  }, []);
+
+  const handleChangeLinkedDeviceCode = (e: ChangeEvent<HTMLSelectElement>) => {
+    setLinkedDeviceCode(e.target.value);
+  };
+  const handleSaveLinkProduct = async () => {
+    if (!linkedDeviceCode) return toast.error("اختر اسم المعدة");
+    setIsLoading(true);
+    const { error } = await supabase
+      .from(`${deviceType}`)
+      .update({
+        equipment_code: linkedDeviceCode,
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast.error(error.message);
+      setIsLoading(false);
+    } else {
+      toast.success("تم الربط بنجاح");
+      getProduct();
+      handleCloseLinkModal();
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (s: string) =>
@@ -534,6 +573,28 @@ export default function ProductDetails() {
         <Text> {product.tag} هل أنت متأكد من حذف هذا المنتج </Text>
       </MyModal>
 
+      {/* Link Modal */}
+      <MyModal
+        ModalTitle="ربط الجهاز بالمعده"
+        isOpen={isLinkModalOpen}
+        closeModal={handleCloseLinkModal}
+        handleSave={handleSaveLinkProduct}
+      >
+        <Select defaultValue={""} onChange={handleChangeLinkedDeviceCode}>
+          <option value={""} disabled hidden>
+            {" "}
+            اختر اسم المعده
+          </option>
+          {equipmentsCodes.map((equipment, index) => {
+            return (
+              <option key={index} value={equipment.code}>
+                {equipment.code.toUpperCase()}
+              </option>
+            );
+          })}
+        </Select>
+      </MyModal>
+
       {/* Main display */}
       <Flex
         direction={{ base: "column", md: "row" }}
@@ -631,22 +692,6 @@ export default function ProductDetails() {
           )}
 
           <HStack>
-            <MdInfo color="#d69e2e" size={22} />
-            <Text fontWeight="bold" fontSize="xl">
-              الحالة:
-            </Text>
-            <Badge
-              fontSize="md"
-              px={3}
-              py={1}
-              borderRadius="md"
-              colorScheme={getStatusColor(product.status)}
-            >
-              {product.status}
-            </Badge>
-          </HStack>
-
-          <HStack>
             <MdLocationOn color="#3182ce" size={22} />
             <Text fontWeight="bold" fontSize="xl">
               الموقع:
@@ -669,19 +714,6 @@ export default function ProductDetails() {
             </Text>
             <Text fontSize="lg">{product.created_at}</Text>
           </HStack>
-
-          <HStack>
-            <MdBuild color="#48bb78" size={22} />
-            <Text fontWeight="bold" fontSize="xl">
-              قطع الغيار:
-            </Text>
-            <Badge fontSize="md" px={3} py={1} colorScheme="green">
-              {product.howManySpares > 0
-                ? `✅ ${product.howManySpares}`
-                : "يوجد قطع غيار بالمخزن"}
-            </Badge>
-          </HStack>
-
           <Divider />
 
           <HStack spacing={4}>
@@ -717,11 +749,23 @@ export default function ProductDetails() {
           <HStack>
             <Button
               onClick={handleOpenEditModal}
-              bg="blue.400"
-              _hover={{ bg: "blue.500" }}
+              bg="green.400"
+              _hover={{ bg: "green.500" }}
             >
               تعديل بيانات الجهاز
             </Button>
+            {product.equipment_code == null ? (
+              <Button
+                onClick={handleOpenLinkModal}
+                bg="orange.300"
+                _hover={{ bg: "orange.400" }}
+              >
+                ربط الجهاز بمعده
+              </Button>
+            ) : (
+              ""
+            )}
+
             <Button
               onClick={handleOpenDeleteModal}
               bg="red.400"
@@ -732,6 +776,24 @@ export default function ProductDetails() {
           </HStack>
         </VStack>
       </Flex>
+
+      {product.equipment_code != null && (
+        <HStack dir="rtl" mt={5}>
+          <MdInfo color="#d69e2e" size={22} />
+          <Text fontWeight="bold" fontSize="xl">
+            تم الربط بمعده
+          </Text>
+          <Badge
+            fontSize="md"
+            px={3}
+            py={1}
+            borderRadius="md"
+            colorScheme={getStatusColor(product.status)}
+          >
+            {product.equipment_code || "غير محدد"}
+          </Badge>
+        </HStack>
+      )}
 
       <Box mt={10} dir="rtl">
         <Heading size="md" mb={3}>

@@ -30,6 +30,8 @@ const CalibrationPage = () => {
   const [newCalibration, setNewCalibration] = useState<calibration>(
     {} as calibration
   );
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File>({} as File);
   const [selectedVideo, setSelectedVideo] = useState<string>("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,64 +81,58 @@ const CalibrationPage = () => {
   const handleAddModalChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
 
-    if (type === "file") {
-      const file = (e.target as HTMLInputElement).files?.[0] || "";
-      setNewCalibration((prev) => ({ ...prev, [name]: file }));
-    } else {
-      setNewCalibration((prev) => ({ ...prev, [name]: value }));
-    }
+    setNewCalibration((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     if (
       !newCalibration.name ||
       !newCalibration.type ||
-      !newCalibration.image ||
-      !newCalibration.video
+      images.length == 0 ||
+      !video
     ) {
       return toast.error("من فضلك ادخل جميع الحقول");
     }
 
     setIsLoading(true);
 
-    //  Upload image  To Storage First in Supabase
-    let image = "";
-    if (newCalibration.image) {
-      const { error: imgErr } = await supabase.storage
-        .from("media")
-        .upload(`images/${uniqueName}.jpg`, newCalibration.image, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-      if (imgErr) {
-        if (imgErr) return toast.error("هذه الصورة موجودة بالفعل");
-        setIsLoading(false);
-      }
-      image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/images/${uniqueName}.jpg`;
+    //  Upload video To Storage First in Supabase
+    const videoPath = `/videos/${uniqueName}`;
+    const { error: videoErr } = await supabase.storage
+      .from("media")
+      .upload(videoPath, video, {
+        contentType: "video/mp4",
+        upsert: true,
+      });
+    if (videoErr) {
+      toast.error("فشل في رفع الفيديو");
     }
 
-    //  Upload video To Storage First in Supabase
-    let video = "";
-    if (newCalibration.video) {
-      const { error: vidErr } = await supabase.storage
-        .from("media")
-        .upload(`videos/${uniqueName}.mp4`, newCalibration.video, {
-          contentType: "video/mp4",
-          upsert: true,
-        });
-      if (vidErr) {
-        toast.error("هذه االفديو  موجودة بالفعل");
-        setIsLoading(false);
-      }
-      video = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/videos/${uniqueName}.mp4`;
-    }
+    const videoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media${videoPath}`;
+    let imageUrl = "";
+    await Promise.all(
+      images.map(async (file) => {
+        const imagePath = `images/${uniqueName}`;
+        const { error: imgErr } = await supabase.storage
+          .from("media")
+          .upload(imagePath, file, {
+            contentType: "image/jpeg",
+            upsert: true,
+          });
+        if (imgErr) {
+          toast.error("فشل في رفع الصورة");
+        } else {
+          imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
+        }
+      })
+    );
 
     const { error } = await supabase.from("calibration").insert({
       ...newCalibration,
-      image,
-      video,
+      image: imageUrl,
+      video: videoUrl,
     });
 
     if (error) {
@@ -154,6 +150,8 @@ const CalibrationPage = () => {
     setSelectedVideo(url);
     setIsOpen(true);
   };
+
+  console.log(newCalibration, images, video);
 
   if (isLoading) return <Loader loading={isLoading} />;
 
@@ -183,7 +181,12 @@ const CalibrationPage = () => {
         isOpen={isAddModalOpen}
         handleSave={handleSave}
       >
-        <DeviceForm fields={FieldsType} onChange={handleAddModalChange} />
+        <DeviceForm
+          fields={FieldsType}
+          onChange={handleAddModalChange}
+          setVideo={setVideo}
+          setImages={setImages}
+        />
       </MyModal>
 
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>

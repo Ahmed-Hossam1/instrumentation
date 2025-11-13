@@ -14,6 +14,7 @@ export interface DeviceBase {
   description: string;
   created_at: string;
   range: string;
+  equipment_code: string;
 }
 
 // Transmitter device
@@ -485,6 +486,15 @@ export const formConfig: Record<string, Field[]> = {
       placeholder: "ارفع صورة للمعده",
     },
   ],
+
+  // LinkDeviceWithEquipment: [
+  //   {
+  //     name: "Code",
+  //     label: "🏷️ ادخل اسم المعده",
+  //     type: "select",
+  //     placeholder: "TK-722",
+  //   },
+  // ],
 };
 
 export interface equipments {
