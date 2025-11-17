@@ -25,7 +25,7 @@ import {
   FlexProps,
 } from "@chakra-ui/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import { ReactNode } from "react";
 
 import { FiHome, FiMenu, FiChevronDown } from "react-icons/fi";
@@ -59,14 +59,22 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
   { name: "Home", icon: FiHome, href: "/" },
-  { name: "Equipments", icon: BiDevices, href: "/equipments" },
-  { name: "Transmitters", icon: MdWifiTethering, href: "/transmitters" },
-  { name: "Indicators", icon: MdSpeed, href: "/indicators" },
-  { name: "Switches", icon: BiChip, href: "/switches" },
-  { name: "Valves", icon: GiValve, href: "/valves" },
-  { name: "Calibration", icon: TbSettingsCog, href: "/calibration" },
-  { name: "Malfunctions", icon: MdReportProblem, href: "/malfunctions" },
-  { name: "FireFighting", icon: ImFire, href: "/firefighting" },
+  { name: "Equipments", icon: BiDevices, href: "/dashboard/equipments" },
+  {
+    name: "Transmitters",
+    icon: MdWifiTethering,
+    href: "/dashboard/transmitters",
+  },
+  { name: "Indicators", icon: MdSpeed, href: "/dashboard/indicators" },
+  { name: "Switches", icon: BiChip, href: "/dashboard/switches" },
+  { name: "Valves", icon: GiValve, href: "/dashboard/valves" },
+  { name: "Calibration", icon: TbSettingsCog, href: "/dashboard/calibration" },
+  {
+    name: "Malfunctions",
+    icon: MdReportProblem,
+    href: "/dashboard/malfunctions",
+  },
+  { name: "FireFighting", icon: ImFire, href: "/dashboard/firefighting" },
 ];
 
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
@@ -161,6 +169,11 @@ const NavItem = ({ icon, children, href, ...rest }: NavItemProps) => {
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
   const { colorMode, toggleColorMode } = useColorMode();
 
+  function deleteCookies() {
+    document.cookie = "user_id=; path=/; max-age=0";
+    redirect("/auth_layout/login");
+  }
+
   return (
     <Flex
       ml={{ base: 0, md: 60 }}
@@ -224,7 +237,7 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
               <MenuItem>Settings</MenuItem>
               <MenuItem>Billing</MenuItem>
               <MenuDivider />
-              <MenuItem>Sign out</MenuItem>
+              <MenuItem onClick={() => deleteCookies()}>Sign out</MenuItem>
             </MenuList>
           </Menu>
         </Flex>

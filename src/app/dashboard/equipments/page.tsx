@@ -16,14 +16,14 @@ import {
 import toast from "react-hot-toast";
 import Link from "next/link";
 
-import { supabase } from "../lib/Supabase";
-import { equipments, formConfig } from "../interface/interface";
+import { supabase } from "@/app/lib/Supabase";
+import { equipments, formConfig } from "../../interface/interface";
 
-import MySkeleton from "../components/MySkeleton";
-import Pagination from "../UI/Pagination";
-import PageLoader from "../UI/Loader";
-import MyModal from "../UI/MyModal";
-import DeviceForm from "../UI/DeviceForm";
+import MySkeleton from "../../components/MySkeleton";
+import Pagination from "../../UI/Pagination";
+import PageLoader from "../../UI/Loader";
+import MyModal from "../../UI/MyModal";
+import DeviceForm from "../../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
 
 // =============================
@@ -200,7 +200,7 @@ const EquipmentsPage = () => {
       {currentItems.length > 0 ? (
         <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={6}>
           {currentItems.map((equipment) => (
-            <Link href={`/equipments/${equipment.code}`} key={equipment.code}>
+            <Link href={`/dashboard/equipments/${equipment.code}`} key={equipment.code}>
               <Card
                 _hover={{ shadow: "xl", transform: "scale(1.03)" }}
                 transition="all 0.2s"

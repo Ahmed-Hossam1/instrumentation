@@ -16,11 +16,11 @@ import { TbSettingsCog } from "react-icons/tb";
 import { useEffect, useState, type ChangeEvent } from "react";
 import toast from "react-hot-toast";
 import { formConfig, type calibration } from "@/app/interface/interface";
-import MyModal from "../UI/MyModal";
-import Loader from "../UI/Loader";
-import Video from "../components/Video";
-import { supabase } from "../lib/Supabase";
-import DeviceForm from "../UI/DeviceForm";
+import MyModal from "../../UI/MyModal";
+import Loader from "../../UI/Loader";
+import Video from "../../components/Video";
+import { supabase } from "../../lib/Supabase";
+import DeviceForm from "../../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
 
 const CalibrationPage = () => {

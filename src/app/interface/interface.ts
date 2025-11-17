@@ -100,7 +100,7 @@ export const formConfig: Record<string, Field[]> = {
       name: "tag",
       label: "🏷️ Tag",
       type: "text",
-      placeholder: "اكتب التاج بتاع الجهاز",
+      placeholder: "اكتب تاج الجهاز",
     },
     {
       name: "deviceType",
@@ -487,14 +487,6 @@ export const formConfig: Record<string, Field[]> = {
     },
   ],
 
-  // LinkDeviceWithEquipment: [
-  //   {
-  //     name: "Code",
-  //     label: "🏷️ ادخل اسم المعده",
-  //     type: "select",
-  //     placeholder: "TK-722",
-  //   },
-  // ],
 };
 
 export interface equipments {

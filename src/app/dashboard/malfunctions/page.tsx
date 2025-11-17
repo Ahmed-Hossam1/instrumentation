@@ -15,11 +15,11 @@ import {
 } from "@chakra-ui/react";
 import toast from "react-hot-toast";
 
-import { formConfig, MalfunctionData } from "../interface/interface";
-import Loader from "../UI/Loader";
-import MyModal from "../UI/MyModal";
-import { supabase } from "../lib/Supabase";
-import DeviceForm from "../UI/DeviceForm";
+import { formConfig, MalfunctionData } from "../../interface/interface";
+import Loader from "../../UI/Loader";
+import MyModal from "../../UI/MyModal";
+import { supabase } from "../../lib/Supabase";
+import DeviceForm from "../../UI/DeviceForm";
 
 // 👇 خيارات التصنيف
 const SeverityOptions = [

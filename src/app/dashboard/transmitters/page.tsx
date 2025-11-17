@@ -15,12 +15,12 @@ import toast from "react-hot-toast";
 import Pagination from "@/app/UI/Pagination";
 import ProductCard from "@/app/components/ProductCard";
 import MyModal from "@/app/UI/MyModal";
-import { formConfig, type Transmitter } from "../interface/interface";
-import { supabase } from "../lib/Supabase";
-import DeviceForm from "../UI/DeviceForm";
+import { formConfig, type Transmitter } from "../../interface/interface";
+import { supabase } from "@/app/lib/Supabase";
+import DeviceForm from "@/app/UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
 import PageLoader from "@/app/UI/Loader";
-import MyHeading from "../components/MyHeading";
+import MyHeading from "@/app/components/MyHeading";
 
 // ========== Component ==========
 const TransmittersPage = () => {
@@ -254,7 +254,7 @@ const TransmittersPage = () => {
         {currentItems.map((device) => (
           <Link
             key={device.id}
-            href={`/details/${device.deviceType}/${device.id}`}
+            href={`/dashboard/details/${device.deviceType}/${device.id}`}
           >
             <ProductCard {...device} />
           </Link>

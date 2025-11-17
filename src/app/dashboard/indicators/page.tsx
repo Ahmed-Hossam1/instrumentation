@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
-import { formConfig, Indicators } from "../interface/interface";
+import { formConfig, Indicators } from "../../interface/interface";
 import {
   Box,
   Heading,
@@ -10,16 +10,16 @@ import {
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { supabase } from "../lib/Supabase";
+import { supabase } from "../../lib/Supabase";
 import toast from "react-hot-toast";
-import Pagination from "../UI/Pagination";
+import Pagination from "../../UI/Pagination";
 import Link from "next/link";
-import ProductCard from "../components/ProductCard";
-import Loader from "../UI/Loader";
-import MyModal from "../UI/MyModal";
-import DeviceForm from "../UI/DeviceForm";
+import ProductCard from "../../components/ProductCard";
+import Loader from "../../UI/Loader";
+import MyModal from "../../UI/MyModal";
+import DeviceForm from "../../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
-import MyHeading from "../components/MyHeading";
+import MyHeading from "../../components/MyHeading";
 
 const IndicatorsPage = () => {
   /*===================== STATES ======================*/
@@ -232,7 +232,7 @@ const IndicatorsPage = () => {
         {currentItems.map((device) => (
           <Link
             key={device.id}
-            href={`/details/${device.deviceType}/${device.id}`}
+            href={`/dashboard/details/${device.deviceType}/${device.id}`}
           >
             <ProductCard {...device} />
           </Link>

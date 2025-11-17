@@ -9,17 +9,17 @@ import {
   HStack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import Pagination from "../UI/Pagination";
-import ProductCard from "../components/ProductCard";
-import MyModal from "../UI/MyModal";
+import Pagination from "../../UI/Pagination";
+import ProductCard from "../../components/ProductCard";
+import MyModal from "../../UI/MyModal";
 import toast from "react-hot-toast";
-import Loader from "../UI/Loader";
-import { formConfig, ValveDevice } from "../interface/interface";
+import Loader from "../../UI/Loader";
+import { formConfig, ValveDevice } from "../../interface/interface";
 import Link from "next/link";
-import { supabase } from "../lib/Supabase";
-import DeviceForm from "../UI/DeviceForm";
+import { supabase } from "../../lib/Supabase";
+import DeviceForm from "../../UI/DeviceForm";
 import { v4 as uuidv4 } from "uuid";
-import MyHeading from "../components/MyHeading";
+import MyHeading from "../../components/MyHeading";
 
 const ValvesPage = () => {
   /*===================== STATE ======================*/
@@ -230,7 +230,7 @@ const ValvesPage = () => {
 
       <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={6}>
         {currentItems.map((v) => (
-          <Link key={v.id} href={`/details/${v.deviceType}/${v.id}`}>
+          <Link key={v.id} href={`/dashboard/details/${v.deviceType}/${v.id}`}>
             <ProductCard {...v} />
           </Link>
         ))}

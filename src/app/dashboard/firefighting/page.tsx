@@ -1,4 +1,4 @@
-import ComingSoonPage from "../components/UnderConstructionPage";
+import ComingSoonPage from "../../components/UnderConstructionPage";
 
 export default function FireFighting() {
   return <ComingSoonPage />;

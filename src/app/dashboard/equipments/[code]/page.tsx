@@ -99,7 +99,7 @@ const DeviceDetails = () => {
         <SimpleGrid columns={{ base: 2, lg: 3 }} spacing={6}>
           {devices.map((device) => {
             const thumb = device.images[0] ?? FALLBACK_IMG;
-            const href = `/details/${encodeURIComponent(
+            const href = `/dashboard/details/${encodeURIComponent(
               device.device_type.toLowerCase()
             )}/${encodeURIComponent(device.tag)}`;
 

@@ -9,21 +9,21 @@ import {
   HStack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import Pagination from "../UI/Pagination";
-import ProductCard from "../components/ProductCard";
+import Pagination from "@/app/UI/Pagination"; 
+import ProductCard from "@/app/components/ProductCard"; 
 import Link from "next/link";
-import MyModal from "../UI/MyModal";
+import MyModal from "@/app/UI/MyModal"; 
 import {
   formConfig,
   type DeviceBase,
   type SwitchDevice,
-} from "../interface/interface";
+} from "../../interface/interface";
 import toast from "react-hot-toast";
-import Loader from "../UI/Loader";
-import { supabase } from "../lib/Supabase";
-import DeviceForm from "../UI/DeviceForm";
+import PageLoader from "@/app/UI/Loader";
+import { supabase } from "@/app/lib/Supabase"; 
+import DeviceForm from "@/app/UI/DeviceForm"; 
 import { v4 as uuidv4 } from "uuid";
-import MyHeading from "../components/MyHeading";
+import MyHeading from "@/app/components/MyHeading"; 
 
 const SwitchesPage = () => {
   /*===================== STATES ======================*/
@@ -219,7 +219,7 @@ const SwitchesPage = () => {
     setStatusFilter(e.target.value);
   };
 
-  if (isLoading) return <Loader loading={isLoading} />;
+  if (isLoading) return <PageLoader loading={isLoading} />;
 
   return (
     <Box p={6} bg={bg} borderRadius="md" shadow="md">
@@ -253,7 +253,7 @@ const SwitchesPage = () => {
       <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={6}>
         {currentItems.map((device) => (
           <Link
-            href={`/details/${device.deviceType}/${device.id}`}
+            href={`/dashboard/details/${device.deviceType}/${device.id}`}
             key={device.id}
           >
             <ProductCard {...device} />

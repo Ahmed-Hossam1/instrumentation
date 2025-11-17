@@ -22,12 +22,7 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import {
-  DeviceUnion,
-  equipments,
-  formConfig,
-  Images,
-} from "@/app/interface/interface";
+import { DeviceUnion, formConfig, Images } from "@/app/interface/interface";
 import MyModal from "@/app/UI/MyModal";
 import { supabase } from "../lib/Supabase";
 import toast from "react-hot-toast";
@@ -765,6 +760,7 @@ export default function ProductDetails() {
             ) : (
               ""
             )}
+          </HStack>
 
             <Button
               onClick={handleOpenDeleteModal}
@@ -773,7 +769,6 @@ export default function ProductDetails() {
             >
               حذف الجهاز
             </Button>
-          </HStack>
         </VStack>
       </Flex>
 
