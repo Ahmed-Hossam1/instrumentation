@@ -26,7 +26,7 @@ import {
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { redirect, usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import { FiHome, FiMenu, FiChevronDown } from "react-icons/fi";
 import { MdReportProblem, MdSpeed, MdWifiTethering } from "react-icons/md";
@@ -36,6 +36,10 @@ import { TbSettingsCog } from "react-icons/tb";
 import { ImFire } from "react-icons/im";
 import { BsMoon, BsSun } from "react-icons/bs";
 import { IconType } from "react-icons";
+import { updateUserLogin } from "../lib/updateUser";
+import toast from "react-hot-toast";
+import { Iuser } from "../interface/interface";
+import { supabase } from "../lib/Supabase";
 
 interface LinkItemProps {
   name: string;
@@ -58,7 +62,7 @@ interface SidebarProps extends BoxProps {
 }
 
 const LinkItems: Array<LinkItemProps> = [
-  { name: "Home", icon: FiHome, href: "/" },
+  { name: "Home", icon: FiHome, href: "/dashboard" },
   { name: "Equipments", icon: BiDevices, href: "/dashboard/equipments" },
   {
     name: "Transmitters",
@@ -168,9 +172,36 @@ const NavItem = ({ icon, children, href, ...rest }: NavItemProps) => {
 
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
   const { colorMode, toggleColorMode } = useColorMode();
+  const [userData, setUserData] = useState<Iuser | null>(null);
+
+  const UserId = document.cookie
+    .split(";")
+    .find((X) => X.includes("user_id"))
+    ?.split("=")[1];
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", UserId)
+        .single();
+
+      if (error) {
+        return toast.error(error.message);
+      }
+
+      setUserData(data);
+    };
+
+    fetchUserData();
+  }, [UserId]);
 
   function deleteCookies() {
+    if (!UserId) return;
+    updateUserLogin(UserId, false);
     document.cookie = "user_id=; path=/; max-age=0";
+    toast.success("Logout successful!");
     redirect("/auth_layout/login");
   }
 
@@ -212,16 +243,16 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
           <Menu>
             <MenuButton py={2} transition="all 0.3s">
               <HStack>
-                <Avatar size="sm" />
+                <Avatar size="sm" name={userData?.full_name} />
                 <VStack
                   display={{ base: "none", md: "flex" }}
                   alignItems="flex-start"
                   spacing="1px"
                   ml="2"
                 >
-                  <Text fontSize="sm">Admin</Text>
+                  <Text fontSize="sm">{userData?.full_name}</Text>
                   <Text fontSize="xs" color="gray.500">
-                    Admin
+                    {userData?.role}
                   </Text>
                 </VStack>
                 <Box display={{ base: "none", md: "flex" }}>
@@ -233,9 +264,9 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
               bg={useColorModeValue("white", "gray.900")}
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
-              <MenuItem>Profile</MenuItem>
-              <MenuItem>Settings</MenuItem>
-              <MenuItem>Billing</MenuItem>
+              <MenuItem as="a" href={`/dashboard/user/profile/${UserId}`}>
+                Profile
+              </MenuItem>
               <MenuDivider />
               <MenuItem onClick={() => deleteCookies()}>Sign out</MenuItem>
             </MenuList>

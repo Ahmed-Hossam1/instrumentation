@@ -1,15 +1,20 @@
 import { redirect } from "next/navigation";
-import { supabase } from "./lib/Supabase"; // client عادي بدون auth
 import { headers } from "next/headers";
+import { Toaster } from "react-hot-toast";
+import { Chakra } from "./lib/chakra-provider";
+import PageLoader from "./UI/Loader";
+import { supabase } from "./lib/Supabase";
 
-export default async function HomePage() {
-  // جلب الكوكيز
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const headersList = await headers();
   const cookieHeader = (await headersList.get("cookie")) || "";
   const match = cookieHeader.match(/user_id=([^;]+)/);
   const userId = match ? match[1] : null;
 
-  // لو مفيش user_id، روح للصفحة login
   if (!userId) return redirect("/auth_layout/login");
 
   // تشيك على وجود المستخدم في جدول users
@@ -21,6 +26,11 @@ export default async function HomePage() {
 
   if (!user || error) return redirect("/auth_layout/login");
 
-  // لو كل حاجة تمام، روح للـ dashboard
-  return redirect("/dashboard");
+  return (
+    <Chakra>
+      <Toaster />
+      <PageLoader />
+      {children}
+    </Chakra>
+  );
 }

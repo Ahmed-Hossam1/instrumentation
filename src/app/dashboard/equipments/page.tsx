@@ -12,6 +12,7 @@ import {
   Input,
   SimpleGrid,
   Text,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -45,21 +46,30 @@ const EquipmentsPage = () => {
 
   const FieldsType = formConfig["equipments"];
 
-  // -----------------------------
-  // Filtering
-  // -----------------------------
+  // =============================
+  // 🎨 Dark Mode Colors
+  // =============================
+  const pageBg = useColorModeValue("gray.50", "gray.800");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const inputBg = useColorModeValue("white", "gray.600");
+  const inputBorder = useColorModeValue("gray.300", "gray.500");
+  const textColor = useColorModeValue("gray.800", "gray.100");
+
+  // =============================
+  // 🔍 Filtering
+  // =============================
   const handleFilter = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    setCurrentPage(1); // reset to first page when searching
+    setCurrentPage(1);
   };
 
   const filtered = equipments.filter((d) =>
     d.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  // -----------------------------
-  // Pagination
-  // -----------------------------
+  // =============================
+  // 🔢 Pagination
+  // =============================
   const itemsPerPage = 6;
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentItems = filtered.slice(
@@ -77,18 +87,16 @@ const EquipmentsPage = () => {
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
-  // -----------------------------
-  // Fetch Data
-  // -----------------------------
+  // =============================
+  // 📦 Fetch Equipments
+  // =============================
   const getEquipments = async () => {
     setLoading(true);
     const { data, error } = await supabase.from("equipments").select("*");
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setEquipments(data || []);
-    }
+    if (error) toast.error(error.message);
+    else setEquipments(data || []);
+
     setLoading(false);
   };
 
@@ -96,23 +104,25 @@ const EquipmentsPage = () => {
     getEquipments();
   }, []);
 
+  // =============================
+  // ✏️ Modal Handlers
+  // =============================
   const handleChangeModal = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setAddEquipment((prev) => ({ ...prev, [name]: value }));
-  };
-  const handleOpenAddModal = () => {
-    setIsAddModalOpen(true);
-  };
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
+    setAddEquipment((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleOpenAddModal = () => setIsAddModalOpen(true);
+  const handleCloseAddModal = () => setIsAddModalOpen(false);
+
+  // =============================
+  // ➕ Add New Equipment
+  // =============================
   const handleAddDevice = async () => {
-    if (!addEquipment.code || images.length === 0) {
-     return  toast.error("من فضلك ادخل اسم المعدة وصورة الجهاز");
-    }
+    if (!addEquipment.code || images.length === 0)
+      return toast.error("من فضلك ادخل اسم المعدة وصورة الجهاز");
+
     setLoading(true);
 
     let uploadedImageUrl = "";
@@ -120,20 +130,15 @@ const EquipmentsPage = () => {
     await Promise.all(
       images.map(async (file) => {
         const imageId = uuidv4();
-        const imagePath = `images/${imageId}`;
+        const path = `images/${imageId}`;
 
-        const { error: imgUploadError } = await supabase.storage
+        const { error } = await supabase.storage
           .from("media")
-          .upload(imagePath, file, {
-            contentType: "image/jpeg",
-            upsert: true,
-          });
+          .upload(path, file, { contentType: "image/jpeg", upsert: true });
 
-        if (imgUploadError) {
-          toast.error("حدث خطأ في تحميل الصورة");
-        } else {
-          uploadedImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${imagePath}`;
-        }
+        if (error) return toast.error("حدث خطأ في تحميل الصورة");
+
+        uploadedImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${path}`;
       })
     );
 
@@ -142,9 +147,8 @@ const EquipmentsPage = () => {
       image_url: uploadedImageUrl,
     });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
+    if (error) toast.error(error.message);
+    else {
       toast.success("تم اضافة المعدة بنجاح");
       getEquipments();
       handleCloseAddModal();
@@ -154,16 +158,14 @@ const EquipmentsPage = () => {
   };
 
   // -----------------------------
-  // Loader
-  // -----------------------------
   if (loading) return <PageLoader loading={loading} />;
 
-  // -----------------------------
-  // Render
-  // -----------------------------
+  // =============================
+  // 🎨 Render UI
+  // =============================
   return (
-    <Box p={6} borderRadius="md" shadow="md">
-      <Heading size="lg" mb={6} textAlign="center">
+    <Box p={6} borderRadius="md" bg={pageBg} minH="100vh">
+      <Heading size="lg" mb={6} textAlign="center" color={textColor}>
         📋 قايمة المعدات
       </Heading>
 
@@ -173,12 +175,15 @@ const EquipmentsPage = () => {
           placeholder="🔎 ابحث برقم أو اسم المعدة..."
           value={search}
           onChange={handleFilter}
+          bg={inputBg}
+          borderColor={inputBorder}
+          color={textColor}
           shadow="sm"
           borderRadius="md"
         />
       </HStack>
 
-      <Button colorScheme="blue" w={"100%"} mb={8} onClick={handleOpenAddModal}>
+      <Button colorScheme="blue" w="100%" mb={8} onClick={handleOpenAddModal}>
         اضافه معدة
       </Button>
 
@@ -200,29 +205,36 @@ const EquipmentsPage = () => {
       {currentItems.length > 0 ? (
         <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={6}>
           {currentItems.map((equipment) => (
-            <Link href={`/dashboard/equipments/${equipment.code}`} key={equipment.code}>
+            <Link
+              href={`/dashboard/equipments/${equipment.code}`}
+              key={equipment.code}
+            >
               <Card
-                _hover={{ shadow: "xl", transform: "scale(1.03)" }}
-                transition="all 0.2s"
-                cursor="pointer"
-                bg="white"
+                bg={cardBg}
                 shadow="md"
                 borderRadius="lg"
+                _hover={{
+                  shadow: "xl",
+                  transform: "scale(1.03)",
+                  transition: "all 0.2s",
+                }}
+                cursor="pointer"
               >
                 <Image
-                  src={equipment.image_url as string}
+                  src={equipment.image_url as string || ""}
                   alt={equipment.code}
                   w="100%"
                   h={{ base: "180px", md: "220px", lg: "300px" }}
                   objectFit="contain"
+                  bg={cardBg}
                   borderTopRadius="lg"
-                  bg="gray.100"
                   fallback={<MySkeleton />}
                   onError={(e) => {
                     e.currentTarget.src =
                       "https://tse1.mm.bing.net/th/id/OIP.XXWKhZZeWjrUPx-ZSfP0GAHaDt?r=0&rs=1&pid=ImgDetMain&o=7&rm=3";
                   }}
                 />
+
                 <CardBody>
                   <Text
                     fontSize="lg"
@@ -230,6 +242,7 @@ const EquipmentsPage = () => {
                     textAlign="center"
                     letterSpacing="wide"
                     textTransform="uppercase"
+                    color={textColor}
                   >
                     {equipment.code}
                   </Text>
@@ -239,7 +252,7 @@ const EquipmentsPage = () => {
           ))}
         </SimpleGrid>
       ) : (
-        <Text textAlign="center" mt={10} fontSize="lg" color="gray.500">
+        <Text textAlign="center" mt={10} fontSize="lg" color="gray.400">
           ❌ لا توجد نتائج مطابقة
         </Text>
       )}
@@ -252,7 +265,7 @@ const EquipmentsPage = () => {
             isDisabled={currentPage === 1}
             title=" السابق"
           />
-          <Text>
+          <Text color={textColor}>
             الصفحة {currentPage} من {totalPages}
           </Text>
           <Pagination

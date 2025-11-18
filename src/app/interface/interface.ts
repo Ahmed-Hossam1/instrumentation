@@ -66,12 +66,14 @@ export interface calibration {
   type: string;
 }
 
-export interface users {
-  uuid: string;
-  name: string;
-  email: string;
+export interface Iuser {
+  id: string;
+  full_name: string;
+  role : string;
   password: string;
-  image: string | File;
+  created_at: string;
+  online: boolean;
+  last_login: string;
 }
 
 export interface Images {

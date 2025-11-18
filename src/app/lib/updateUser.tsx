@@ -5,12 +5,12 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export async function updateUserLogin(userId: string) {
+export async function updateUserLogin(userId: string , online : boolean) {
   const { error } = await supabase
     .from("users")
     .update({
       last_login: new Date().toISOString(),
-      online: true,
+      online: online,
     })
     .eq("id", userId);
 
