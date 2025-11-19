@@ -762,13 +762,13 @@ export default function ProductDetails() {
             )}
           </HStack>
 
-            <Button
-              onClick={handleOpenDeleteModal}
-              bg="red.400"
-              _hover={{ bg: "red.500" }}
-            >
-              حذف الجهاز
-            </Button>
+          <Button
+            onClick={handleOpenDeleteModal}
+            bg="red.400"
+            _hover={{ bg: "red.500" }}
+          >
+            حذف الجهاز
+          </Button>
         </VStack>
       </Flex>
 
@@ -800,7 +800,16 @@ export default function ProductDetails() {
               controls
               src={product.video}
               style={{ width: "100%", maxHeight: "500px", borderRadius: 8 }}
-            />
+            >
+              <source src={product.video as string} type="video/mp4" />
+              <track
+                src="/path/to/captions.vtt"
+                kind="subtitles"
+                srcLang="en"
+                label="English"
+              />
+              Your browser does not support the video tag.
+            </video>
           ) : (
             <Text color="gray.500">لا يوجد فيديو توضيحي.</Text>
           )}

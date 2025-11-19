@@ -49,7 +49,7 @@ const ValvesPage = () => {
     return searchMatch && statusMatch;
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = 15;
   const currentItems = filtered.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage

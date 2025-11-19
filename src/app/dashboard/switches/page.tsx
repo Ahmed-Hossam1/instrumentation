@@ -61,7 +61,7 @@ const SwitchesPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = 15;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);

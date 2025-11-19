@@ -50,7 +50,7 @@ const TransmittersPage = () => {
     Inactive: "لا يعمل",
   };
 
-  const itemsPerPage = 6;
+  const itemsPerPage = 15;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 

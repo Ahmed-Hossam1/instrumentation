@@ -173,37 +173,61 @@ const NavItem = ({ icon, children, href, ...rest }: NavItemProps) => {
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [userData, setUserData] = useState<Iuser | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const UserId = document.cookie
-    .split(";")
-    .find((X) => X.includes("user_id"))
-    ?.split("=")[1];
-
+  // -----------------------------
+  // Safely read user_id from cookies on client-side
+  // -----------------------------
   useEffect(() => {
+    if (typeof document === "undefined") return; // prevent SSR issues
+
+    const cookie = document.cookie
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("user_id="));
+
+    if (cookie) {
+      const id = cookie.split("=")[1];
+      setUserId(id || null);
+    }
+  }, []);
+
+  // -----------------------------
+  // Fetch user data when userId is available
+  // -----------------------------
+  useEffect(() => {
+    if (!userId) return;
+
     const fetchUserData = async () => {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", UserId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      if (error) {
-        return toast.error(error.message);
+        if (error) throw error;
+
+        setUserData(data);
+      } catch (err) {
+        if (err) console.log(err);
       }
-
-      setUserData(data);
     };
 
     fetchUserData();
-  }, [UserId]);
+  }, [userId]);
 
-  function deleteCookies() {
-    if (!UserId) return;
-    updateUserLogin(UserId, false);
-    document.cookie = "user_id=; path=/; max-age=0";
+  // -----------------------------
+  // Logout function: clears cookie, updates supabase, redirects
+  // -----------------------------
+  const handleLogout = () => {
+    if (!userId) return;
+
+    updateUserLogin(userId, false); // mark offline in DB
+    document.cookie = "user_id=; path=/; max-age=0"; // clear cookie
     toast.success("Logout successful!");
     redirect("/auth_layout/login");
-  }
+  };
 
   return (
     <Flex
@@ -264,11 +288,11 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
               bg={useColorModeValue("white", "gray.900")}
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
-              <MenuItem as="a" href={`/dashboard/user/profile/${UserId}`}>
+              <MenuItem as="a" href={`/dashboard/user/profile/${userId}`}>
                 Profile
               </MenuItem>
               <MenuDivider />
-              <MenuItem onClick={() => deleteCookies()}>Sign out</MenuItem>
+              <MenuItem onClick={() => handleLogout()}>Sign out</MenuItem>
             </MenuList>
           </Menu>
         </Flex>
