@@ -298,7 +298,7 @@ export default function ProductDetails() {
       toast.error(error.message);
     } else {
       toast.success("تم الحذف بنجاح");
-      router.push(`/${deviceType}`);
+      router.push(`/dashboard/${deviceType}`);
     }
     setIsLoading(false);
   };
