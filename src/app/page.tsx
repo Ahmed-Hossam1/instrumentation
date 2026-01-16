@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabase } from "./lib/Supabase";
+import ComingSoonPage from "./components/UnderConstructionPage";
 
 export default async function EntryLayout() {
   const headersList = await headers();
@@ -8,7 +9,7 @@ export default async function EntryLayout() {
   const match = cookieHeader.match(/user_id=([^;]+)/);
   const userId = match ? match[1] : null;
 
-  if (!userId) return redirect("/auth_layout/login");
+  if (!userId) return <ComingSoonPage />;
 
   const { data: user, error } = await supabase
     .from("users")
@@ -16,7 +17,7 @@ export default async function EntryLayout() {
     .eq("id", userId)
     .single();
 
-  if (!user || error) return redirect("/auth_layout/login");
+  if (!user || error) return <ComingSoonPage />;
 
   return redirect("/dashboard");
 }
