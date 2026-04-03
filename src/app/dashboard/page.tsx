@@ -2,24 +2,24 @@
 
 import {
   Box,
-  SimpleGrid,
   Heading,
-  useColorModeValue,
-  UnorderedList,
-  Text,
-  ListItem,
-  VStack,
   Image,
+  ListItem,
+  SimpleGrid,
+  Text,
+  UnorderedList,
+  useColorModeValue,
+  VStack,
 } from "@chakra-ui/react";
-import { Bar } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
   BarElement,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
   Tooltip,
-  Legend,
 } from "chart.js";
+import { Bar } from "react-chartjs-2";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
